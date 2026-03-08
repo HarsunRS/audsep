@@ -13,16 +13,16 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
-      <html lang="en" className={inter.variable}>
-        <body>
+    <html lang="en" className={inter.variable}>
+      <body>
+        <ClerkProvider>
           <PostHogProvider>
             <PostHogUserIdentifier />
             <Navbar />
             {children}
           </PostHogProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }

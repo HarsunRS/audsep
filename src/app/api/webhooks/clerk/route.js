@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Webhook } from 'svix';
-import { createServerClient } from '../../../../lib/supabase';
-import { sendWelcomeEmail } from '../../../../lib/email';
+import { createServerClient } from '../../../../../lib/supabase';
+import { sendWelcomeEmail } from '../../../../../lib/email';
 
 export async function POST(req) {
   const payload = await req.text();

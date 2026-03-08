@@ -7,14 +7,15 @@ const isProtectedRoute = createRouteMatcher([
   '/api/separate(.*)',
   '/api/jobs(.*)',
   '/api/settings(.*)',
+  '/api/dashboard(.*)',
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  // Allow /api/v1 through — it uses its own API key auth
+  // /api/v1 uses its own API key auth — skip Clerk
   if (req.nextUrl.pathname.startsWith('/api/v1')) return;
-  // Allow LemonSqueezy + Clerk webhooks through
+  // Webhooks bypass Clerk auth
   if (req.nextUrl.pathname.startsWith('/api/webhooks')) return;
-  if (req.nextUrl.pathname.startsWith('/api/lemonsqueezy/webhook')) return;
+  if (req.nextUrl.pathname.startsWith('/api/lemonsqueezy')) return;
 
   if (isProtectedRoute(req)) {
     await auth.protect();

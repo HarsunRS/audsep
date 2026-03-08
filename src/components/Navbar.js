@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Music2 } from 'lucide-react';
-import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import { Show, UserButton, SignInButton, SignUpButton } from '@clerk/nextjs';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -57,19 +57,23 @@ export default function Navbar() {
 
       {/* Auth section */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <SignedOut>
-          <Link href="/signin" style={{ textDecoration: 'none', color: '#555', fontWeight: '500', fontSize: '0.9rem' }}>
-            Sign In
-          </Link>
-          <Link href="/app" style={{
-            textDecoration: 'none', background: '#111', color: '#fff',
-            fontWeight: '600', fontSize: '0.85rem', padding: '0.5rem 1.25rem', borderRadius: '8px',
-          }}>
-            Try Free →
-          </Link>
-        </SignedOut>
+        <Show when="signed-out">
+          <SignInButton mode="modal">
+            <button style={{ background: 'transparent', border: 'none', color: '#555', fontWeight: '500', fontSize: '0.9rem', cursor: 'pointer', padding: 0 }}>
+              Sign In
+            </button>
+          </SignInButton>
+          <SignUpButton mode="modal">
+            <button style={{
+              background: '#111', color: '#fff', border: 'none', cursor: 'pointer',
+              fontWeight: '600', fontSize: '0.85rem', padding: '0.5rem 1.25rem', borderRadius: '8px',
+            }}>
+              Try Free →
+            </button>
+          </SignUpButton>
+        </Show>
 
-        <SignedIn>
+        <Show when="signed-in">
           <Link href="/dashboard" style={{
             textDecoration: 'none', color: '#555', fontWeight: '500', fontSize: '0.9rem',
             ...(pathname === '/dashboard' ? { color: '#111', fontWeight: '700' } : {})
@@ -83,7 +87,7 @@ export default function Navbar() {
             Separate
           </Link>
           <UserButton afterSignOutUrl="/" />
-        </SignedIn>
+        </Show>
       </div>
     </motion.nav>
   );

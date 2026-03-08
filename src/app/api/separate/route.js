@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { checkAndIncrementUsage } from '../../../lib/usage';
-import { uploadInput } from '../../../lib/storage';
-import { createServerClient } from '../../../lib/supabase';
+import { checkAndIncrementUsage } from '../../../../lib/usage';
+import { uploadInput } from '../../../../lib/storage';
+import { createServerClient } from '../../../../lib/supabase';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs/promises';
