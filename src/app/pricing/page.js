@@ -211,6 +211,17 @@ export default function PricingPage() {
                     </div>
                 </div>
             </section>
+            {/* ─── FOOTER ─── */}
+            <footer style={{ padding: '2rem', borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', color: '#999', fontSize: '0.85rem' }}>
+                <span>© 2026 AudSep. All rights reserved.</span>
+                <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                    <Link href="/pricing" style={{ color: '#999', textDecoration: 'none' }}>Pricing</Link>
+                    <Link href="/contact" style={{ color: '#999', textDecoration: 'none' }}>Contact</Link>
+                    <Link href="/terms" style={{ color: '#999', textDecoration: 'none' }}>Terms of Service</Link>
+                    <Link href="/privacy" style={{ color: '#999', textDecoration: 'none' }}>Privacy Policy</Link>
+                    <Link href="/app" style={{ color: '#999', textDecoration: 'none' }}>App</Link>
+                </div>
+            </footer>
         </main>
     );
 }
