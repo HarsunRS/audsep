@@ -1,6 +1,7 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
+import posthog from 'posthog-js';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Check, Zap, Shield } from 'lucide-react';
@@ -46,26 +47,25 @@ const plans = [
             'Priority processing queue',
             'Batch upload (up to 10 tracks)',
         ],
-        cta: 'Start Pro Trial',
-        href: '/contact',
+        cta: 'Get Pro',
+        plan: 'pro',
         highlight: true,
     },
     {
-        name: 'Enterprise',
-        price: 'Custom',
-        period: 'per seat',
-        desc: 'API access, SLA guarantees, and volume pricing for teams.',
+        name: 'Team',
+        price: '$39',
+        period: 'per month',
+        desc: 'API access, SLA guarantees, and volume pricing for studios.',
         features: [
             'Everything in Pro',
-            'REST API access',
+            'REST API access + API keys',
             'Webhooks & callbacks',
-            'Custom model fine-tuning',
             'SLA & uptime guarantee',
             'Priority support',
-            'Dedicated infrastructure',
+            'Dedicated processing queue',
         ],
-        cta: 'Contact Sales',
-        href: '/contact',
+        cta: 'Get Team',
+        plan: 'team',
         highlight: false,
     },
 ];
@@ -78,6 +78,25 @@ const faqs = [
 ];
 
 export default function PricingPage() {
+    const [loadingPlan, setLoadingPlan] = useState(null);
+
+    const handleCheckout = async (plan) => {
+        if (!plan) return;
+        setLoadingPlan(plan);
+        posthog.capture('checkout_started', { plan });
+        try {
+            const res = await fetch('/api/lemonsqueezy/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plan }),
+            });
+            if (res.status === 401) { window.location.href = '/signin'; return; }
+            const data = await res.json();
+            if (data.url) window.location.href = data.url;
+        } catch (e) { console.error(e); }
+        finally { setLoadingPlan(null); }
+    };
+
     return (
         <main style={{ minHeight: '100vh', paddingTop: '6rem' }}>
             {/* Header */}
@@ -132,15 +151,30 @@ export default function PricingPage() {
                                 ))}
                             </ul>
 
-                            <Link href={plan.href} style={{
-                                display: 'block', textAlign: 'center', textDecoration: 'none', fontWeight: '700',
-                                padding: '0.9rem', borderRadius: '10px', fontSize: '0.95rem',
-                                background: plan.highlight ? '#fff' : '#111',
-                                color: plan.highlight ? '#111' : '#fff',
-                                transition: 'opacity 0.2s'
-                            }}>
-                                {plan.cta}
-                            </Link>
+                            {plan.plan ? (
+                                <button onClick={() => handleCheckout(plan.plan)}
+                                    disabled={loadingPlan === plan.plan}
+                                    style={{
+                                        display: 'block', width: '100%', textAlign: 'center',
+                                        fontWeight: '700', padding: '0.9rem', borderRadius: '10px',
+                                        fontSize: '0.95rem', cursor: 'pointer', border: 'none',
+                                        background: plan.highlight ? '#fff' : '#111',
+                                        color: plan.highlight ? '#111' : '#fff',
+                                        opacity: loadingPlan === plan.plan ? 0.7 : 1,
+                                    }}>
+                                    {loadingPlan === plan.plan ? 'Redirecting…' : plan.cta}
+                                </button>
+                            ) : (
+                                <Link href={plan.href || '/app'} style={{
+                                    display: 'block', textAlign: 'center', textDecoration: 'none',
+                                    fontWeight: '700', padding: '0.9rem', borderRadius: '10px',
+                                    fontSize: '0.95rem',
+                                    background: plan.highlight ? '#fff' : '#111',
+                                    color: plan.highlight ? '#111' : '#fff',
+                                }}>
+                                    {plan.cta}
+                                </Link>
+                            )}
                         </motion.div>
                     ))}
                 </motion.div>

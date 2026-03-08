@@ -6,6 +6,9 @@ import UploadSection from '../../components/UploadSection';
 import ConfigSection from '../../components/ConfigSection';
 import ProcessButton from '../../components/ProcessButton';
 import EditorSection from '../../components/EditorSection';
+import Link from 'next/link';
+import posthog from 'posthog-js';
+import { useUser } from '@clerk/nextjs';
 
 const fadeUp = {
     hidden: { opacity: 0, y: 30 },
@@ -17,9 +20,8 @@ const stagger = {
 };
 
 export default function AppPage() {
+    const { user } = useUser();
     const [file, setFile] = useState(null);
-    // Batch model + category into one object so switching tabs
-    // causes a single re-render instead of two.
     const [modelConfig, setModelConfig] = useState({ model: 'htdemucs', category: 'music' });
     const [vocalOnly, setVocalOnly] = useState(false);
     const [trimStart, setTrimStart] = useState(0);
@@ -29,23 +31,35 @@ export default function AppPage() {
     const [progress, setProgress] = useState(0);
     const [tracksUrls, setTracksUrls] = useState(null);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const [usage, setUsage] = useState({ used: 0, limit: 3, plan: 'free' });
+    const [upgradePrompt, setUpgradePrompt] = useState(false);
 
-    // Ref guard: prevents duplicate submissions from StrictMode double-invoke
-    // or rapid button clicks.
     const processingRef = useRef(false);
 
     useEffect(() => {
         const h = (e) => setMousePos({ x: e.clientX, y: e.clientY });
         window.addEventListener('mousemove', h);
+        fetchUsage();
         return () => window.removeEventListener('mousemove', h);
     }, []);
 
+    const fetchUsage = async () => {
+        try {
+            const res = await fetch('/api/dashboard/usage');
+            if (res.ok) setUsage(await res.json());
+        } catch { }
+    };
+
     const handleProcess = async () => {
-        if (!file || processingRef.current) return; // guard against double-fire
+        if (!file || processingRef.current) return;
         processingRef.current = true;
         setIsProcessing(true);
         setProgress(0);
         setTracksUrls(null);
+        setUpgradePrompt(false);
+
+        posthog.capture('separation_started', { model: modelConfig.model, category: modelConfig.category });
+        const startTime = Date.now();
 
         try {
             const formData = new FormData();
@@ -57,6 +71,13 @@ export default function AppPage() {
             if (trimEnd > trimStart) formData.append('trimEnd', String(trimEnd));
 
             const res = await fetch('/api/separate', { method: 'POST', body: formData });
+
+            if (res.status === 429) {
+                const data = await res.json();
+                setUpgradePrompt(true);
+                return;
+            }
+
             if (!res.ok) throw new Error('Failed to process audio');
 
             const reader = res.body.getReader();
@@ -75,6 +96,11 @@ export default function AppPage() {
                                 setProgress(data.percent);
                             } else if (data.type === 'success') {
                                 setTracksUrls(data.tracks);
+                                posthog.capture('separation_complete', {
+                                    model: modelConfig.model,
+                                    stem_count: Object.keys(data.tracks || {}).length,
+                                });
+                                fetchUsage();
                                 setTimeout(() => {
                                     document.getElementById('editor-section')?.scrollIntoView({ behavior: 'smooth' });
                                 }, 500);
@@ -106,12 +132,40 @@ export default function AppPage() {
 
             <main style={{ maxWidth: '900px', margin: '0 auto', padding: '7rem 2rem 6rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                    <h1 style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-1px', color: '#0a0a0a', marginBottom: '0.35rem' }}>
-                        Audio Separator
-                    </h1>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.35rem' }}>
+                        <h1 style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-1px', color: '#0a0a0a' }}>
+                            Audio Separator
+                        </h1>
+                        {/* Usage counter */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            {usage.plan === 'free' && (
+                                <span style={{
+                                    fontSize: '0.8rem', fontWeight: '600', color: usage.used >= usage.limit ? '#dc2626' : '#777',
+                                    background: usage.used >= usage.limit ? '#fee2e2' : '#f3f3f3',
+                                    padding: '0.3rem 0.75rem', borderRadius: '999px', border: '1px solid',
+                                    borderColor: usage.used >= usage.limit ? '#fecaca' : '#e5e5e5',
+                                }}>
+                                    {usage.used} / {usage.limit} free today
+                                </span>
+                            )}
+                            {usage.plan !== 'free' && (
+                                <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#7c3aed', background: '#f5f3ff', padding: '0.3rem 0.75rem', borderRadius: '999px', border: '1px solid #ede9fe' }}>
+                                    {usage.plan} — unlimited
+                                </span>
+                            )}
+                        </div>
+                    </div>
                     <p style={{ color: '#777', fontSize: '0.95rem' }}>
                         Upload a track, pick a model, and get isolated stems in minutes.
                     </p>
+                    {/* Upgrade prompt */}
+                    {upgradePrompt && (
+                        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+                            style={{ marginTop: '0.75rem', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '10px', padding: '0.85rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: '600', color: '#92400e', fontSize: '0.9rem' }}>You've used all 3 free separations today.</span>
+                            <Link href="/pricing" style={{ background: '#111', color: '#fff', padding: '0.5rem 1.2rem', borderRadius: '7px', textDecoration: 'none', fontWeight: '700', fontSize: '0.82rem' }}>Upgrade to Pro →</Link>
+                        </motion.div>
+                    )}
                 </motion.div>
 
                 <motion.div variants={stagger} initial="hidden" animate="show" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

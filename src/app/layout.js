@@ -1,24 +1,28 @@
-import { Inter } from "next/font/google";
-import "./globals.css";
-import Navbar from "../components/Navbar";
+import { ClerkProvider } from '@clerk/nextjs';
+import { PostHogProvider, PostHogUserIdentifier } from '../components/PostHogProvider';
+import { Inter } from 'next/font/google';
+import Navbar from '../components/Navbar';
+import './globals.css';
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata = {
-  title: "AudSep | AI Audio Separation",
-  description: "Next-generation AI audio separation. Split vocals, drums, bass, and more from any track in seconds.",
+  title: 'AudSep — AI Audio Stem Separator',
+  description: 'Separate any track into vocals, drums, bass, and instruments with studio-grade AI.',
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable}`}>
-        <Navbar />
-        {children}
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className={inter.variable}>
+        <body>
+          <PostHogProvider>
+            <PostHogUserIdentifier />
+            <Navbar />
+            {children}
+          </PostHogProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
