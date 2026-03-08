@@ -23,7 +23,7 @@ const plans = [
         period: 'forever',
         desc: 'Perfect for casual use and exploring AI stem separation.',
         features: [
-            '3 separations per day',
+            '2 separations per day',
             'Standard quality MP3 output',
             'HTDemucs model only',
             'Max 5 min track length',
@@ -34,11 +34,11 @@ const plans = [
     },
     {
         name: 'Basic',
-        price: '$8',
+        price: '$9',
         period: 'per month',
         desc: 'Great for hobbyists who need more length and quality.',
         features: [
-            '50 separations per month',
+            '30 separations per month',
             'High quality WAV output',
             'HTDemucs model only',
             'Max 15 min track length',
@@ -50,11 +50,11 @@ const plans = [
     },
     {
         name: 'Pro',
-        price: '$12',
+        price: '$19',
         period: 'per month',
-        desc: 'For producers & DJs who need unlimited power & models.',
+        desc: 'For producers & DJs who need high volume & all models.',
         features: [
-            'Unlimited separations',
+            '100 separations per month',
             'Hi-res 32-bit float output',
             'All models (HTDemucs, MDX-Net)',
             'Max 60 min track length',
@@ -66,12 +66,13 @@ const plans = [
         highlight: true,
     },
     {
-        name: 'Team',
-        price: '$39',
+        name: 'Studio',
+        price: '$49',
         period: 'per month',
         desc: 'API access, SLA guarantees, and volume pricing for studios.',
         features: [
-            'Everything in Pro',
+            '300 separations per month',
+            'Everything else in Pro',
             'REST API access + API keys',
             'Webhooks & callbacks',
             'SLA & uptime guarantee',

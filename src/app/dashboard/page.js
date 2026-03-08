@@ -29,7 +29,7 @@ export default function DashboardPage() {
   const upgraded = searchParams.get('upgraded');
 
   const [jobs, setJobs] = useState([]);
-  const [usage, setUsage] = useState({ used: 0, limit: 3, plan: 'free' });
+  const [usage, setUsage] = useState({ used: 0, limit: 2, plan: 'free' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -99,7 +99,7 @@ export default function DashboardPage() {
         {/* Upgrade prompt for free tier near limit */}
         {usage.plan === 'free' && usage.used >= usage.limit && (
           <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '12px', padding: '1rem 1.5rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            <span style={{ color: '#92400e', fontWeight: '600' }}>You've used all 3 free separations today.</span>
+            <span style={{ color: '#92400e', fontWeight: '600' }}>You've used all 2 free separations today.</span>
             <Link href="/pricing" style={{ background: '#111', color: '#fff', padding: '0.6rem 1.4rem', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '0.85rem' }}>
               Upgrade to Pro →
             </Link>
