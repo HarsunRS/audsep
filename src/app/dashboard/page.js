@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -24,6 +24,14 @@ const STATUS_ICONS = {
 const PLAN_COLORS = { free: '#6b7280', pro: '#7c3aed', team: '#0284c7' };
 
 export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '6rem', textAlign: 'center' }}>Loading dashboard...</div>}>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+function DashboardContent() {
   const { user } = useUser();
   const searchParams = useSearchParams();
   const upgraded = searchParams.get('upgraded');
