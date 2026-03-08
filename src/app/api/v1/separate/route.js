@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { validateApiKey } from '../../../../lib/apikeys';
-import { checkAndIncrementUsage } from '../../../../lib/usage';
-import { uploadInput } from '../../../../lib/storage';
-import { createServerClient } from '../../../../lib/supabase';
+import { validateApiKey } from '../../../../../lib/apikeys';
+import { checkAndIncrementUsage } from '../../../../../lib/usage';
+import { uploadInput } from '../../../../../lib/storage';
+import { createServerClient } from '../../../../../lib/supabase';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs/promises';
