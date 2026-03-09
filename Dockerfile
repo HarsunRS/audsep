@@ -14,10 +14,7 @@ RUN python -m venv .venv
 # Install dependencies into the virtual environment
 RUN .venv/bin/pip install --no-cache-dir -r requirements.txt
 
-# Also install facebook-denoiser manually in case it's missing from local requirements
-RUN .venv/bin/pip install --no-cache-dir denoiser
-
-# Copy the rest of the app into the container (excluding node_modules based on .dockerignore if it exists)
+# Copy the rest of the app into the container
 COPY . .
 
 # Start the worker
