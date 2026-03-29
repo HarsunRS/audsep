@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import posthog from 'posthog-js';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Script from 'next/script';
 import { Check, Zap, Shield } from 'lucide-react';
 
 const fadeUp = {
@@ -100,20 +101,40 @@ export default function PricingPage() {
         setLoadingPlan(plan);
         posthog.capture('checkout_started', { plan });
         try {
-            const res = await fetch('/api/lemonsqueezy/checkout', {
+            const res = await fetch('/api/razorpay/create-order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ plan }),
             });
             if (res.status === 401) { window.location.href = '/signin'; return; }
-            const data = await res.json();
-            if (data.url) window.location.href = data.url;
+            const orderDetail = await res.json();
+            
+            if (orderDetail.id) {
+                const options = {
+                    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_your_key_id',
+                    amount: orderDetail.amount,
+                    currency: orderDetail.currency,
+                    name: "AudSep",
+                    description: `Upgrade to ${plan} plan`,
+                    order_id: orderDetail.id,
+                    handler: function(response) {
+                        posthog.capture('checkout_completed', { plan });
+                        window.location.href = '/dashboard?upgraded=1';
+                    },
+                    theme: { color: "#111111" }
+                };
+                const rzp = new window.Razorpay(options);
+                rzp.open();
+            } else if (orderDetail.error) {
+                alert(orderDetail.error);
+            }
         } catch (e) { console.error(e); }
         finally { setLoadingPlan(null); }
     };
 
     return (
         <main style={{ minHeight: '100vh', paddingTop: '6rem' }}>
+            <Script id="razorpay-checkout-js" src="https://checkout.razorpay.com/v1/checkout.js" />
             {/* Header */}
             <section style={{ textAlign: 'center', padding: '4rem 2rem 3rem' }}>
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
