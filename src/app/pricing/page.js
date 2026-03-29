@@ -118,10 +118,10 @@ export default function PricingPage() {
     };
 
     return (
-        <main style={{ minHeight: '100vh', paddingTop: '6rem' }}>
+        <main style={{ minHeight: '100vh', paddingTop: '4rem' }}>
             <Script id="razorpay-checkout-js" src="https://checkout.razorpay.com/v1/checkout.js" />
             {/* Header */}
-            <section style={{ textAlign: 'center', padding: '2rem 2rem 3rem' }}>
+            <section style={{ textAlign: 'center', padding: '1rem 2rem 1.5rem' }}>
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
                     <h1 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: '900', letterSpacing: '-2px', color: '#0a0a0a', marginBottom: '1rem' }}>
                         Plans for every workflow
@@ -133,28 +133,28 @@ export default function PricingPage() {
             </section>
 
             {/* Current Plan */}
-            <section style={{ padding: '0 2rem 2rem' }}>
+            <section style={{ padding: '0 2rem 1rem' }}>
                 <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}
-                    style={{ background: '#fafafa', border: '1px solid #ebebeb', borderRadius: '20px', padding: '2rem', maxWidth: '1100px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: '2rem', justifyContent: 'space-between', alignItems: 'center' }}>
+                    style={{ background: '#fafafa', border: '1px solid #ebebeb', borderRadius: '16px', padding: '1.25rem 2rem', maxWidth: '1100px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0a0a0a' }}>Free Plan</h2>
-                            <span style={{ fontSize: '0.75rem', fontWeight: '700', background: '#e5e5e5', color: '#555', padding: '0.2rem 0.6rem', borderRadius: '99px' }}>CURRENT</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+                            <h2 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#0a0a0a' }}>Free Plan</h2>
+                            <span style={{ fontSize: '0.7rem', fontWeight: '700', background: '#e5e5e5', color: '#555', padding: '0.2rem 0.6rem', borderRadius: '99px' }}>CURRENT</span>
                         </div>
-                        <p style={{ color: '#666', fontSize: '0.95rem', maxWidth: '400px', lineHeight: 1.5, marginBottom: '1rem' }}>Perfect for casual use. Enjoy up to 3 separations per day with a maximum of 2 minutes per audio track.</p>
-                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: '#555' }}><Check size={15} color="#111" strokeWidth={2.5} /> Standard quality MP3 output</li>
-                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: '#555' }}><Check size={15} color="#111" strokeWidth={2.5} /> HTDemucs model only</li>
+                        <p style={{ color: '#666', fontSize: '0.9rem', maxWidth: '450px', lineHeight: 1.4, marginBottom: '0.5rem' }}>Perfect for casual use. Enjoy up to 3 separations per day with a maximum of 2 minutes per audio track.</p>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#555' }}><Check size={14} color="#111" strokeWidth={2.5} /> Standard quality MP3 output</li>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#555' }}><Check size={14} color="#111" strokeWidth={2.5} /> HTDemucs model only</li>
                         </ul>
                     </div>
-                    <Link href="/studio" style={{ background: '#fff', border: '1.5px solid #ddd', color: '#111', fontWeight: '700', padding: '0.8rem 1.5rem', borderRadius: '10px', textDecoration: 'none', fontSize: '0.95rem' }}>
+                    <Link href="/studio" style={{ background: '#fff', border: '1.5px solid #ddd', color: '#111', fontWeight: '700', padding: '0.7rem 1.25rem', borderRadius: '8px', textDecoration: 'none', fontSize: '0.9rem' }}>
                         Start processing
                     </Link>
                 </motion.div>
             </section>
 
             {/* Plans */}
-            <section style={{ padding: '2rem 2rem 6rem' }}>
+            <section style={{ padding: '0.5rem 2rem 6rem' }}>
                 <motion.div
                     variants={stagger} initial="hidden" animate="show"
                     style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', maxWidth: '1100px', margin: '0 auto' }}
