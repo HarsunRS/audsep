@@ -121,15 +121,8 @@ export default function PricingPage() {
         <main style={{ minHeight: '100vh', paddingTop: '6rem' }}>
             <Script id="razorpay-checkout-js" src="https://checkout.razorpay.com/v1/checkout.js" />
             {/* Header */}
-            <section style={{ textAlign: 'center', padding: '4rem 2rem 3rem' }}>
+            <section style={{ textAlign: 'center', padding: '2rem 2rem 3rem' }}>
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-                    <span style={{
-                        display: 'inline-block', background: '#f3f3f3', border: '1px solid #e0e0e0',
-                        borderRadius: '20px', padding: '0.35rem 1rem', fontSize: '0.8rem',
-                        fontWeight: '600', color: '#555', marginBottom: '1.5rem', letterSpacing: '0.05em'
-                    }}>
-                        SIMPLE PRICING
-                    </span>
                     <h1 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: '900', letterSpacing: '-2px', color: '#0a0a0a', marginBottom: '1rem' }}>
                         Plans for every workflow
                     </h1>
@@ -148,7 +141,11 @@ export default function PricingPage() {
                             <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0a0a0a' }}>Free Plan</h2>
                             <span style={{ fontSize: '0.75rem', fontWeight: '700', background: '#e5e5e5', color: '#555', padding: '0.2rem 0.6rem', borderRadius: '99px' }}>CURRENT</span>
                         </div>
-                        <p style={{ color: '#666', fontSize: '0.95rem', maxWidth: '400px', lineHeight: 1.5 }}>Perfect for casual use. Enjoy up to 3 separations per day with a maximum of 2 minutes per audio track.</p>
+                        <p style={{ color: '#666', fontSize: '0.95rem', maxWidth: '400px', lineHeight: 1.5, marginBottom: '1rem' }}>Perfect for casual use. Enjoy up to 3 separations per day with a maximum of 2 minutes per audio track.</p>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: '#555' }}><Check size={15} color="#111" strokeWidth={2.5} /> Standard quality MP3 output</li>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: '#555' }}><Check size={15} color="#111" strokeWidth={2.5} /> HTDemucs model only</li>
+                        </ul>
                     </div>
                     <Link href="/studio" style={{ background: '#fff', border: '1.5px solid #ddd', color: '#111', fontWeight: '700', padding: '0.8rem 1.5rem', borderRadius: '10px', textDecoration: 'none', fontSize: '0.95rem' }}>
                         Start processing
