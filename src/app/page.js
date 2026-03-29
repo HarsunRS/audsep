@@ -55,9 +55,8 @@ export default function LandingPage() {
       }} />
 
       {/* ─── HERO ─── */}
-      <section style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8rem 2rem 4rem', textAlign: 'center' }}>
+      <section style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 2rem 4rem', textAlign: 'center' }}>
         <motion.div variants={stagger} initial="hidden" animate="show" style={{ maxWidth: '780px', width: '100%' }}>
-
 
           <motion.h1 variants={fadeUp} style={{
             fontSize: 'clamp(3rem, 8vw, 5.5rem)', fontWeight: '900', letterSpacing: '-3px',
@@ -93,7 +92,7 @@ export default function LandingPage() {
             No credit card required · 3 free separations per day
           </motion.p>
 
-          {/* Animated soundwave hero visual — heights rounded to integers to avoid SSR/client hydration mismatch */}
+          {/* Animated soundwave */}
           <motion.div variants={fadeUp} style={{ marginTop: '4rem', display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '5px', height: '80px' }}>
             {Array.from({ length: 60 }).map((_, i) => {
               const h = Math.round(10 + Math.abs(Math.sin(i * 0.4)) * 60);

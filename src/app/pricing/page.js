@@ -5,7 +5,7 @@ import posthog from 'posthog-js';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Script from 'next/script';
-import { Check, Zap, Shield } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 const fadeUp = {
     hidden: { opacity: 0, y: 30 },
@@ -17,11 +17,12 @@ const stagger = {
     show: { transition: { staggerChildren: 0.12 } }
 };
 
-const plans = [
+const getPlans = (yearly) => [
     {
         name: 'Basic',
-        price: '$9',
-        period: 'per month',
+        price: yearly ? '$48' : '$5',
+        sub: yearly ? '/year' : '/month',
+        saving: yearly ? 'Save $12/yr' : null,
         desc: 'Great for hobbyists who need more length and quality.',
         features: [
             '30 separations per month',
@@ -31,13 +32,14 @@ const plans = [
             'Standard processing queue',
         ],
         cta: 'Get Basic',
-        plan: 'basic',
+        plan: yearly ? 'basic-yearly' : 'basic-monthly',
         highlight: false,
     },
     {
         name: 'Pro',
-        price: '$19',
-        period: 'per month',
+        price: yearly ? '$144' : '$15',
+        sub: yearly ? '/year' : '/month',
+        saving: yearly ? 'Save $36/yr' : null,
         desc: 'For producers & DJs who need high volume & all models.',
         features: [
             '100 separations per month',
@@ -48,25 +50,26 @@ const plans = [
             'Batch upload (up to 10 tracks)',
         ],
         cta: 'Get Pro',
-        plan: 'pro',
+        plan: yearly ? 'pro-yearly' : 'pro-monthly',
         highlight: true,
     },
     {
         name: 'Studio',
-        price: '$49',
-        period: 'per month',
+        price: yearly ? '$336' : '$35',
+        sub: yearly ? '/year' : '/month',
+        saving: yearly ? 'Save $84/yr' : null,
         desc: 'API access, SLA guarantees, and volume pricing for studios.',
         features: [
             '300 separations per month',
-            'Everything else in Pro',
+            'Everything in Pro',
             'REST API access + API keys',
             'Webhooks & callbacks',
             'SLA & uptime guarantee',
             'Priority support',
             'Dedicated processing queue',
         ],
-        cta: 'Get Team',
-        plan: 'team',
+        cta: 'Get Studio',
+        plan: yearly ? 'studio-yearly' : 'studio-monthly',
         highlight: false,
     },
 ];
@@ -80,6 +83,8 @@ const faqs = [
 
 export default function PricingPage() {
     const [loadingPlan, setLoadingPlan] = useState(null);
+    const [yearly, setYearly] = useState(false);
+    const plans = getPlans(yearly);
 
     const handleCheckout = async (plan) => {
         if (!plan) return;
@@ -123,35 +128,22 @@ export default function PricingPage() {
             {/* Header */}
             <section style={{ textAlign: 'center', padding: '1rem 2rem 1.5rem' }}>
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-                    <h1 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: '900', letterSpacing: '-2px', color: '#0a0a0a', marginBottom: '1rem' }}>
+                    <h1 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: '900', letterSpacing: '-2px', color: '#0a0a0a', marginBottom: '0.75rem' }}>
                         Plans for every workflow
                     </h1>
-                    <p style={{ color: '#666', fontSize: '1.1rem', maxWidth: '460px', margin: '0 auto' }}>
+                    <p style={{ color: '#666', fontSize: '1.1rem', maxWidth: '460px', margin: '0 auto 1.25rem' }}>
                         Start free. Upgrade when you need more. No hidden fees.
                     </p>
+                    {/* Billing toggle */}
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', background: '#f3f3f3', border: '1px solid #e5e5e5', borderRadius: '99px', padding: '0.35rem 0.5rem' }}>
+                        <button onClick={() => setYearly(false)} style={{ padding: '0.35rem 1rem', borderRadius: '99px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem', background: !yearly ? '#fff' : 'transparent', color: !yearly ? '#111' : '#888', boxShadow: !yearly ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}>Monthly</button>
+                        <button onClick={() => setYearly(true)} style={{ padding: '0.35rem 1rem', borderRadius: '99px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem', background: yearly ? '#111' : 'transparent', color: yearly ? '#fff' : '#888', boxShadow: yearly ? '0 1px 4px rgba(0,0,0,0.15)' : 'none', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            Yearly <span style={{ fontSize: '0.7rem', fontWeight: '700', background: '#4ade80', color: '#166534', padding: '0.1rem 0.45rem', borderRadius: '99px' }}>SAVE 20%</span>
+                        </button>
+                    </div>
                 </motion.div>
             </section>
 
-            {/* Current Plan */}
-            <section style={{ padding: '0 2rem 1rem' }}>
-                <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}
-                    style={{ background: '#fafafa', border: '1px solid #ebebeb', borderRadius: '16px', padding: '1.25rem 2rem', maxWidth: '1100px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-                            <h2 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#0a0a0a' }}>Free Plan</h2>
-                            <span style={{ fontSize: '0.7rem', fontWeight: '700', background: '#e5e5e5', color: '#555', padding: '0.2rem 0.6rem', borderRadius: '99px' }}>CURRENT</span>
-                        </div>
-                        <p style={{ color: '#666', fontSize: '0.9rem', maxWidth: '450px', lineHeight: 1.4, marginBottom: '0.5rem' }}>Perfect for casual use. Enjoy up to 3 separations per day with a maximum of 2 minutes per audio track.</p>
-                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#555' }}><Check size={14} color="#111" strokeWidth={2.5} /> Standard quality MP3 output</li>
-                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#555' }}><Check size={14} color="#111" strokeWidth={2.5} /> HTDemucs model only</li>
-                        </ul>
-                    </div>
-                    <Link href="/studio" style={{ background: '#fff', border: '1.5px solid #ddd', color: '#111', fontWeight: '700', padding: '0.7rem 1.25rem', borderRadius: '8px', textDecoration: 'none', fontSize: '0.9rem' }}>
-                        Start processing
-                    </Link>
-                </motion.div>
-            </section>
 
             {/* Plans */}
             <section style={{ padding: '0.5rem 2rem 6rem' }}>
@@ -163,53 +155,46 @@ export default function PricingPage() {
                         <motion.div key={i} variants={fadeUp} style={{
                             background: plan.highlight ? '#111' : '#fff',
                             border: plan.highlight ? 'none' : '1.5px solid #ebebeb',
-                            borderRadius: '20px', padding: '2.5rem',
+                            borderRadius: '20px', padding: '2rem',
                             position: 'relative', overflow: 'hidden',
                             boxShadow: plan.highlight ? '0 20px 60px rgba(0,0,0,0.2)' : '0 2px 12px rgba(0,0,0,0.04)',
                             transform: plan.highlight ? 'scale(1.03)' : 'scale(1)',
+                            display: 'flex', flexDirection: 'column',
                         }}>
                             {plan.highlight && <div style={{ position: 'absolute', top: '1rem', right: '1.5rem', background: 'rgba(255,255,255,0.15)', color: '#fff', borderRadius: '20px', padding: '0.25rem 0.75rem', fontSize: '0.75rem', fontWeight: '700' }}>MOST POPULAR</div>}
 
-                            <h2 style={{ fontWeight: '700', fontSize: '1.1rem', color: plan.highlight ? '#aaa' : '#666', marginBottom: '1rem' }}>{plan.name}</h2>
-                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.35rem', marginBottom: '0.5rem' }}>
-                                <span style={{ fontSize: '3rem', fontWeight: '900', letterSpacing: '-2px', color: plan.highlight ? '#fff' : '#0a0a0a' }}>{plan.price}</span>
-                                <span style={{ fontSize: '0.9rem', color: plan.highlight ? '#aaa' : '#888', marginBottom: '0.5rem' }}>/ {plan.period}</span>
+                            <h2 style={{ fontWeight: '700', fontSize: '1.1rem', color: plan.highlight ? '#aaa' : '#666', marginBottom: '0.75rem' }}>{plan.name}</h2>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.35rem', marginBottom: '0.25rem' }}>
+                                <span style={{ fontSize: '2.75rem', fontWeight: '900', letterSpacing: '-2px', color: plan.highlight ? '#fff' : '#0a0a0a' }}>{plan.price}</span>
+                                <span style={{ fontSize: '0.85rem', color: plan.highlight ? '#aaa' : '#888', marginBottom: '0.45rem' }}>{plan.sub}</span>
                             </div>
-                            <p style={{ color: plan.highlight ? '#bbb' : '#666', fontSize: '0.9rem', marginBottom: '2rem', lineHeight: 1.6 }}>{plan.desc}</p>
+                            {plan.saving && (
+                                <span style={{ fontSize: '0.75rem', fontWeight: '700', color: plan.highlight ? '#4ade80' : '#16a34a', marginBottom: '0.5rem' }}>{plan.saving}</span>
+                            )}
+                            <p style={{ color: plan.highlight ? '#bbb' : '#666', fontSize: '0.85rem', marginBottom: '1.25rem', lineHeight: 1.5 }}>{plan.desc}</p>
 
-                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.6rem', flexGrow: 1 }}>
                                 {plan.features.map((f, j) => (
-                                    <li key={j} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.95rem', color: plan.highlight ? '#ddd' : '#444' }}>
-                                        <Check size={16} color={plan.highlight ? '#4ade80' : '#111'} strokeWidth={2.5} />
+                                    <li key={j} style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', fontSize: '0.9rem', color: plan.highlight ? '#ddd' : '#444' }}>
+                                        <Check size={15} color={plan.highlight ? '#4ade80' : '#111'} strokeWidth={2.5} />
                                         {f}
                                     </li>
                                 ))}
                             </ul>
 
-                            {plan.plan ? (
-                                <button onClick={() => handleCheckout(plan.plan)}
-                                    disabled={loadingPlan === plan.plan}
-                                    style={{
-                                        display: 'block', width: '100%', textAlign: 'center',
-                                        fontWeight: '700', padding: '0.9rem', borderRadius: '10px',
-                                        fontSize: '0.95rem', cursor: 'pointer', border: 'none',
-                                        background: plan.highlight ? '#fff' : '#111',
-                                        color: plan.highlight ? '#111' : '#fff',
-                                        opacity: loadingPlan === plan.plan ? 0.7 : 1,
-                                    }}>
-                                    {loadingPlan === plan.plan ? 'Redirecting…' : plan.cta}
-                                </button>
-                            ) : (
-                                <Link href={plan.href || '/studio'} style={{
-                                    display: 'block', textAlign: 'center', textDecoration: 'none',
-                                    fontWeight: '700', padding: '0.9rem', borderRadius: '10px',
-                                    fontSize: '0.95rem',
+                            <button onClick={() => handleCheckout(plan.plan)}
+                                disabled={loadingPlan === plan.plan}
+                                style={{
+                                    display: 'block', width: '100%', textAlign: 'center',
+                                    fontWeight: '700', padding: '0.85rem', borderRadius: '10px',
+                                    fontSize: '0.95rem', cursor: 'pointer', border: 'none',
                                     background: plan.highlight ? '#fff' : '#111',
                                     color: plan.highlight ? '#111' : '#fff',
+                                    opacity: loadingPlan === plan.plan ? 0.7 : 1,
+                                    marginTop: 'auto',
                                 }}>
-                                    {plan.cta}
-                                </Link>
-                            )}
+                                {loadingPlan === plan.plan ? 'Redirecting…' : plan.cta}
+                            </button>
                         </motion.div>
                     ))}
                 </motion.div>

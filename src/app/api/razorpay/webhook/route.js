@@ -29,12 +29,15 @@ export async function POST(req) {
         const notes = entity.notes || {};
         
         const clerkUserId = notes.clerkUserId;
-        const plan = notes.plan;
+        const rawPlan = notes.plan;
 
-        if (!clerkUserId || !plan) {
+        if (!clerkUserId || !rawPlan) {
             console.error('Webhook missing clerkUserId or plan from notes:', notes);
             return NextResponse.json({ received: true });
         }
+
+        // Normalize plan key: "basic-monthly" → "basic", "pro-yearly" → "pro", etc.
+        const plan = rawPlan.replace(/-(monthly|yearly)$/, '');
 
         const { data: user } = await db.from('users')
           .update({

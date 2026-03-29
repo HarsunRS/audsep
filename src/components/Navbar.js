@@ -44,7 +44,10 @@ export default function Navbar() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
         {[
           { href: '/#features', label: 'Product' },
+          { href: '/about', label: 'About' },
+          { href: '/blog', label: 'Blog' },
           { href: '/pricing', label: 'Pricing' },
+          { href: '/updates', label: 'Updates' },
           { href: '/contact', label: 'Contact' },
         ].map(link => (
           <Link key={link.href} href={link.href} style={{ textDecoration: 'none', color: '#555', fontWeight: '500', fontSize: '0.9rem', transition: 'color 0.2s' }}
