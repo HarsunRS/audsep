@@ -30,7 +30,7 @@ const plans = [
             'Max 5 min track length',
         ],
         cta: 'Get Started Free',
-        href: '/app',
+        href: '/studio',
         highlight: false,
     },
     {
@@ -201,7 +201,7 @@ export default function PricingPage() {
                                     {loadingPlan === plan.plan ? 'Redirecting…' : plan.cta}
                                 </button>
                             ) : (
-                                <Link href={plan.href || '/app'} style={{
+                                <Link href={plan.href || '/studio'} style={{
                                     display: 'block', textAlign: 'center', textDecoration: 'none',
                                     fontWeight: '700', padding: '0.9rem', borderRadius: '10px',
                                     fontSize: '0.95rem',
@@ -240,7 +240,7 @@ export default function PricingPage() {
                     <Link href="/contact" style={{ color: '#999', textDecoration: 'none' }}>Contact</Link>
                     <Link href="/terms" style={{ color: '#999', textDecoration: 'none' }}>Terms of Service</Link>
                     <Link href="/privacy" style={{ color: '#999', textDecoration: 'none' }}>Privacy Policy</Link>
-                    <Link href="/app" style={{ color: '#999', textDecoration: 'none' }}>App</Link>
+                    <Link href="/studio" style={{ color: '#999', textDecoration: 'none' }}>App</Link>
                 </div>
             </footer>
         </main>

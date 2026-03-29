@@ -72,7 +72,7 @@ function DashboardContent() {
             <h1 style={{ fontSize: '2rem', fontWeight: '900', letterSpacing: '-1px', color: '#0a0a0a' }}>Dashboard</h1>
             <p style={{ color: '#777', marginTop: '0.25rem' }}>Hey {user?.firstName || 'there'} 👋</p>
           </div>
-          <Link href="/app" style={{
+          <Link href="/studio" style={{
             display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
             background: '#111', color: '#fff', padding: '0.75rem 1.5rem',
             borderRadius: '10px', fontWeight: '700', fontSize: '0.9rem', textDecoration: 'none',
@@ -121,7 +121,7 @@ function DashboardContent() {
           ) : jobs.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '4rem', color: '#999' }}>
               <p style={{ marginBottom: '1rem' }}>No separations yet.</p>
-              <Link href="/app" style={{ color: '#111', fontWeight: '700', textDecoration: 'underline' }}>Start your first →</Link>
+              <Link href="/studio" style={{ color: '#111', fontWeight: '700', textDecoration: 'underline' }}>Start your first →</Link>
             </div>
           ) : jobs.map(job => (
             <JobCard key={job.id} job={job} formatDate={formatDate} />

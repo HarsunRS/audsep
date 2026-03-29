@@ -80,7 +80,7 @@ export default function Navbar() {
           }}>
             Dashboard
           </Link>
-          <Link href="/app" style={{
+          <Link href="/studio" style={{
             textDecoration: 'none', background: '#111', color: '#fff',
             fontWeight: '600', fontSize: '0.85rem', padding: '0.5rem 1.25rem', borderRadius: '8px',
           }}>
