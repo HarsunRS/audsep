@@ -19,21 +19,6 @@ const stagger = {
 
 const plans = [
     {
-        name: 'Free',
-        price: '$0',
-        period: 'forever',
-        desc: 'Perfect for casual use and exploring AI stem separation.',
-        features: [
-            '2 separations per day',
-            'Standard quality MP3 output',
-            'HTDemucs model only',
-            'Max 5 min track length',
-        ],
-        cta: 'Get Started Free',
-        href: '/studio',
-        highlight: false,
-    },
-    {
         name: 'Basic',
         price: '$9',
         period: 'per month',
@@ -151,6 +136,23 @@ export default function PricingPage() {
                     <p style={{ color: '#666', fontSize: '1.1rem', maxWidth: '460px', margin: '0 auto' }}>
                         Start free. Upgrade when you need more. No hidden fees.
                     </p>
+                </motion.div>
+            </section>
+
+            {/* Current Plan */}
+            <section style={{ padding: '0 2rem 2rem' }}>
+                <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}
+                    style={{ background: '#fafafa', border: '1px solid #ebebeb', borderRadius: '20px', padding: '2rem', maxWidth: '1100px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: '2rem', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0a0a0a' }}>Free Plan</h2>
+                            <span style={{ fontSize: '0.75rem', fontWeight: '700', background: '#e5e5e5', color: '#555', padding: '0.2rem 0.6rem', borderRadius: '99px' }}>CURRENT</span>
+                        </div>
+                        <p style={{ color: '#666', fontSize: '0.95rem', maxWidth: '400px', lineHeight: 1.5 }}>Perfect for casual use. Enjoy up to 3 separations per day with a maximum of 2 minutes per audio track.</p>
+                    </div>
+                    <Link href="/studio" style={{ background: '#fff', border: '1.5px solid #ddd', color: '#111', fontWeight: '700', padding: '0.8rem 1.5rem', borderRadius: '10px', textDecoration: 'none', fontSize: '0.95rem' }}>
+                        Start processing
+                    </Link>
                 </motion.div>
             </section>
 
