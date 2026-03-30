@@ -131,8 +131,8 @@ export default function AppPage() {
                 }
             }
         } catch (error) {
-            console.error(error);
-            alert('Error separating audio. Please try again.');
+            console.error('[Process] Error:', error);
+            alert(`Backend crashed: ${error.message || 'Unknown error'}`);
         } finally {
             processingRef.current = false;
             setIsProcessing(false);
