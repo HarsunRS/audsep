@@ -50,7 +50,7 @@ export default function ApiKeysSettings() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#fafafa', padding: '6rem 2rem 4rem' }}>
-      <div style={{ maxWidth: '760px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '47.50rem', margin: '0 auto' }}>
         <div style={{ marginBottom: '2.5rem' }}>
           <h1 style={{ fontSize: '2rem', fontWeight: '900', letterSpacing: '-1px', color: '#0a0a0a' }}>API Keys</h1>
           <p style={{ color: '#777', marginTop: '0.4rem' }}>Use API keys to call AudSep programmatically via <code style={{ background: '#f3f3f3', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>/api/v1/separate</code></p>

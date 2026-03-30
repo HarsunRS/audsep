@@ -25,7 +25,7 @@ export default function ContactPage() {
     return (
         <main style={{ minHeight: '100vh', paddingTop: '6rem' }}>
             <section style={{ padding: '4rem 2rem 6rem' }}>
-                <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '4rem', alignItems: 'start' }}>
+                <div style={{ maxWidth: '62.50rem', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '4rem', alignItems: 'start' }}>
 
                     {/* Left: Contact info */}
                     <motion.div variants={{ hidden: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0 } }} initial="hidden" animate="show" transition={{ duration: 0.6 }}>

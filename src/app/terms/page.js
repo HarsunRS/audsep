@@ -5,7 +5,7 @@ import React from 'react';
 export default function TermsPage() {
     return (
         <main style={{ minHeight: '100vh', paddingTop: '8rem', paddingBottom: '6rem', paddingLeft: '2rem', paddingRight: '2rem', background: '#fafafa' }}>
-            <div style={{ maxWidth: '800px', margin: '0 auto', background: '#fff', border: '1px solid #ebebeb', borderRadius: '16px', padding: '3rem 4rem' }}>
+            <div style={{ maxWidth: '50rem', margin: '0 auto', background: '#fff', border: '1px solid #ebebeb', borderRadius: '16px', padding: '3rem 4rem' }}>
                 <h1 style={{ fontSize: '2.5rem', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', marginBottom: '2rem' }}>Terms of Service</h1>
                 
                 <div style={{ color: '#444', lineHeight: 1.8, fontSize: '0.95rem' }}>

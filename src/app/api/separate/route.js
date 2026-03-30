@@ -17,10 +17,11 @@ const cleanup = async (dir) => {
 };
 
 export async function POST(request) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // ── Usage enforcement ──────────────────────────────────────────────────────
+    // ── Usage enforcement ──────────────────────────────────────────────────────
   const usage = await checkAndIncrementUsage(userId);
   if (!usage.allowed) {
     return NextResponse.json({
@@ -44,7 +45,7 @@ export async function POST(request) {
   const db = createServerClient();
 
   // Create job record
-  const { data: job } = await db.from('jobs').insert({
+  const { data: job, error: jobError } = await db.from('jobs').insert({
     user_id: usage.userId,
     status: 'queued',
     model,
@@ -52,6 +53,10 @@ export async function POST(request) {
     vocal_only: vocalOnly,
     filename: file.name,
   }).select().single();
+
+  if (jobError || !job) {
+    throw new Error(`Database error creating job: ${jobError?.message || 'Unknown'}`);
+  }
 
   // Try uploading to Supabase Storage (falls back to local if unconfigured)
   const bytes = await file.arrayBuffer();
@@ -76,6 +81,10 @@ export async function POST(request) {
 
   // Return job ID for polling
   return NextResponse.json({ jobId: job.id, status: 'queued', used: usage.used, limit: usage.limit });
+  } catch (error) {
+    console.error('[API separate] POST error:', error);
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  }
 }
 
 async function processLocally({ job, db, buffer, safeFilename, model, category, vocalOnly, trimStart, trimEnd, userId }) {

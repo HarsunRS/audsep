@@ -6,13 +6,13 @@ import Link from 'next/link';
 import { Mic2, Drum, Music, Layers, Zap, Shield, Globe, ChevronRight, Play } from 'lucide-react';
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } }
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } }
 };
 
 const stagger = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.12 } }
+  show: { transition: { staggerChildren: 0.05 } }
 };
 
 export default function LandingPage() {
@@ -47,16 +47,9 @@ export default function LandingPage() {
 
   return (
     <div style={{ overflowX: 'hidden' }}>
-      {/* Bloom background */}
-      <div style={{
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: -1,
-        background: `radial-gradient(circle 700px at ${mousePos.x}px ${mousePos.y}px, rgba(0,0,0,0.04), transparent 70%)`,
-        transition: 'background 0.15s ease-out'
-      }} />
-
       {/* ─── HERO ─── */}
       <section style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 2rem 4rem', textAlign: 'center' }}>
-        <motion.div variants={stagger} initial="hidden" animate="show" style={{ maxWidth: '780px', width: '100%' }}>
+        <motion.div variants={stagger} initial="hidden" animate="show" style={{ maxWidth: '48.75rem', width: '100%' }}>
 
           <motion.h1 variants={fadeUp} style={{
             fontSize: 'clamp(3rem, 8vw, 5.5rem)', fontWeight: '900', letterSpacing: '-3px',
@@ -65,7 +58,7 @@ export default function LandingPage() {
             Separate Any Song<br />Into Its Parts.
           </motion.h1>
 
-          <motion.p variants={fadeUp} style={{ fontSize: '1.2rem', color: '#666', maxWidth: '540px', margin: '0 auto 2.5rem', lineHeight: 1.7 }}>
+          <motion.p variants={fadeUp} style={{ fontSize: '1.2rem', color: '#666', maxWidth: '35rem', margin: '0 auto 2.5rem', lineHeight: 1.7 }}>
             Upload any audio track. AudSep's AI separates vocals, drums, bass, and instruments in under 2 minutes — with studio-grade output quality.
           </motion.p>
 
@@ -112,14 +105,14 @@ export default function LandingPage() {
 
       {/* ─── FEATURES ─── */}
       <section id="features" style={{ padding: '6rem 2rem', background: '#fafafa', borderTop: '1px solid #f0f0f0' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} style={{ textAlign: 'center', marginBottom: '4rem' }}>
+        <div style={{ maxWidth: '70rem', margin: '0 auto' }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} style={{ textAlign: 'center', marginBottom: '4rem' }}>
             <h2 style={{ fontSize: '2.5rem', fontWeight: '800', letterSpacing: '-1.5px', color: '#0a0a0a', marginBottom: '1rem' }}>Everything a producer needs</h2>
-            <p style={{ color: '#666', fontSize: '1.1rem', maxWidth: '500px', margin: '0 auto' }}>Professional stem separation without expensive DAW plugins.</p>
+            <p style={{ color: '#666', fontSize: '1.1rem', maxWidth: '32rem', margin: '0 auto' }}>Professional stem separation without expensive DAW plugins.</p>
           </motion.div>
 
           <motion.div
-            variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true }}
+            variants={stagger} initial="hidden" animate="show"
             style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}
           >
             {features.map((f, i) => (
@@ -142,12 +135,12 @@ export default function LandingPage() {
 
       {/* ─── HOW IT WORKS ─── */}
       <section style={{ padding: '7rem 2rem' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} style={{ textAlign: 'center', marginBottom: '4rem' }}>
+        <div style={{ maxWidth: '56.25rem', margin: '0 auto' }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} style={{ textAlign: 'center', marginBottom: '4rem' }}>
             <h2 style={{ fontSize: '2.5rem', fontWeight: '800', letterSpacing: '-1.5px', color: '#0a0a0a', marginBottom: '1rem' }}>Three steps. Seconds to results.</h2>
           </motion.div>
 
-          <motion.div variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true }} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <motion.div variants={stagger} initial="hidden" animate="show" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             {steps.map((s, i) => (
               <motion.div key={i} variants={fadeUp} style={{
                 display: 'flex', gap: '2rem', alignItems: 'flex-start',
@@ -166,12 +159,12 @@ export default function LandingPage() {
 
       {/* ─── TESTIMONIALS ─── */}
       <section style={{ padding: '6rem 2rem', background: '#fafafa', borderTop: '1px solid #f0f0f0' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} style={{ textAlign: 'center', marginBottom: '4rem' }}>
+        <div style={{ maxWidth: '70rem', margin: '0 auto' }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} style={{ textAlign: 'center', marginBottom: '4rem' }}>
             <h2 style={{ fontSize: '2.5rem', fontWeight: '800', letterSpacing: '-1.5px', color: '#0a0a0a' }}>Loved by creators</h2>
           </motion.div>
 
-          <motion.div variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true }}
+          <motion.div variants={stagger} initial="hidden" animate="show"
             style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}
           >
             {testimonials.map((t, i) => (
@@ -196,7 +189,7 @@ export default function LandingPage() {
 
       {/* ─── FINAL CTA ─── */}
       <section style={{ padding: '8rem 2rem', textAlign: 'center' }}>
-        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
           <h2 style={{ fontSize: '3rem', fontWeight: '900', letterSpacing: '-2px', color: '#0a0a0a', marginBottom: '1.25rem' }}>
             Start separating today.<br />It's free.
           </h2>

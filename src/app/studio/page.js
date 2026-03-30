@@ -70,7 +70,16 @@ export default function AppPage() {
             if (trimStart) formData.append('trimStart', String(trimStart));
             if (trimEnd > trimStart) formData.append('trimEnd', String(trimEnd));
 
-            const res = await fetch('/api/separate', { method: 'POST', body: formData });
+            const res = await fetch('/api/separate', {
+                method: 'POST', 
+                body: formData,
+                redirect: 'manual' // Prevent browser from blindly re-posting 5MB files to /signin on 307 auth redirect
+            });
+
+            if (res.type === 'opaqueredirect' || res.status === 307 || res.status === 302 || res.status === 401) {
+                window.location.href = '/signin';
+                return;
+            }
 
             if (res.status === 429) {
                 const data = await res.json();
@@ -78,7 +87,15 @@ export default function AppPage() {
                 return;
             }
 
-            if (!res.ok) throw new Error('Failed to process audio');
+            if (!res.ok) {
+                let errorMsg = `HTTP Error ${res.status} (${res.statusText})`;
+                try {
+                    const rawText = await res.text();
+                    errorMsg += ` - Body: ${rawText.slice(0, 500)}`;
+                } catch (e) {}
+                console.error('[API] Server error response:', errorMsg);
+                throw new Error(errorMsg);
+            }
 
             const reader = res.body.getReader();
             const decoder = new TextDecoder('utf-8');
@@ -130,7 +147,7 @@ export default function AppPage() {
                 transition: 'background 0.15s ease-out'
             }} />
 
-            <main style={{ maxWidth: '900px', margin: '0 auto', padding: '7rem 2rem 6rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <main style={{ maxWidth: '56.25rem', margin: '0 auto', padding: '7rem 2rem 6rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.35rem' }}>
                         <h1 style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-1px', color: '#0a0a0a' }}>

@@ -122,7 +122,7 @@ const FeaturedPost = ({ post }) => (
         whileHover={{ scale: 1.005, transition: { duration: 0.2 } }}
     >
         <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '40%', background: 'radial-gradient(circle at 100% 50%, rgba(255,255,255,0.04), transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'relative', maxWidth: '600px' }}>
+        <div style={{ position: 'relative', maxWidth: '37.50rem' }}>
             <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: '700', background: '#fff', color: '#111', padding: '0.25rem 0.75rem', borderRadius: '99px' }}>FEATURED</span>
                 <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>{post.category}</span>
@@ -131,7 +131,7 @@ const FeaturedPost = ({ post }) => (
             <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: '900', color: '#fff', letterSpacing: '-1px', marginBottom: '1rem', lineHeight: 1.15 }}>
                 {post.title}
             </h2>
-            <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.95rem', lineHeight: 1.65, marginBottom: '1.75rem', maxWidth: '520px' }}>
+            <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.95rem', lineHeight: 1.65, marginBottom: '1.75rem', maxWidth: '32.50rem' }}>
                 {post.excerpt}
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -198,7 +198,7 @@ export default function BlogPage() {
                     <h1 style={{ fontSize: 'clamp(2.25rem, 5vw, 3.5rem)', fontWeight: '900', letterSpacing: '-2px', color: '#0a0a0a', marginBottom: '1rem' }}>
                         Tutorials, deep dives &amp; use cases
                     </h1>
-                    <p style={{ color: '#666', fontSize: '1.05rem', maxWidth: '480px', margin: '0 auto', lineHeight: 1.6 }}>
+                    <p style={{ color: '#666', fontSize: '1.05rem', maxWidth: '30rem', margin: '0 auto', lineHeight: 1.6 }}>
                         Everything we know about stem separation, audio production workflows, and making AI work for real creators.
                     </p>
                 </motion.div>
@@ -228,7 +228,7 @@ export default function BlogPage() {
 
             {/* Posts grid */}
             <section style={{ padding: '0 2rem 8rem' }}>
-                <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+                <div style={{ maxWidth: '68.75rem', margin: '0 auto' }}>
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={activeCategory}

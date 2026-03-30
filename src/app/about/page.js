@@ -56,7 +56,7 @@ export default function AboutPage() {
         <main style={{ minHeight: '100vh', paddingTop: '6rem', background: '#fff', overflowX: 'hidden' }}>
 
             {/* ── HERO ── */}
-            <section style={{ padding: '4rem 2rem 5rem', maxWidth: '900px', margin: '0 auto' }}>
+            <section style={{ padding: '4rem 2rem 5rem', maxWidth: '56.25rem', margin: '0 auto' }}>
                 <motion.div initial="hidden" animate="show" variants={stagger}>
                     <motion.div variants={fadeUp}>
                         <span style={{
@@ -77,7 +77,7 @@ export default function AboutPage() {
                     </motion.h1>
                     <motion.p variants={fadeUp} style={{
                         color: '#555', fontSize: '1.15rem', lineHeight: 1.75,
-                        maxWidth: '620px', marginBottom: '2.5rem',
+                        maxWidth: '38.75rem', marginBottom: '2.5rem',
                     }}>
                         AudSep is an AI-powered audio stem separator built for producers, DJs, educators, podcasters,
                         and anyone who has ever needed to pull a vocal or instrument out of a mix.
@@ -104,7 +104,7 @@ export default function AboutPage() {
             <section style={{ background: '#0a0a0a', padding: '3.5rem 2rem' }}>
                 <motion.div
                     initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger}
-                    style={{ maxWidth: '900px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '2rem' }}
+                    style={{ maxWidth: '56.25rem', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '2rem' }}
                 >
                     {stats.map(({ value, label, icon: Icon }, i) => (
                         <motion.div key={i} variants={fadeUp} style={{ textAlign: 'center' }}>
@@ -120,7 +120,7 @@ export default function AboutPage() {
 
             {/* ── MISSION ── */}
             <section style={{ padding: '6rem 2rem' }}>
-                <div style={{ maxWidth: '900px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '5rem', alignItems: 'center' }}>
+                <div style={{ maxWidth: '56.25rem', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '5rem', alignItems: 'center' }}>
                     <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger}>
                         <motion.p variants={fadeUp} style={{ fontSize: '0.8rem', fontWeight: '700', color: '#aaa', letterSpacing: '0.1em', marginBottom: '1rem' }}>OUR MISSION</motion.p>
                         <motion.h2 variants={fadeUp} style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', lineHeight: 1.15, marginBottom: '1.5rem' }}>
@@ -160,7 +160,7 @@ export default function AboutPage() {
 
             {/* ── VALUES ── */}
             <section style={{ background: '#fafafa', borderTop: '1px solid #f0f0f0', borderBottom: '1px solid #f0f0f0', padding: '6rem 2rem' }}>
-                <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+                <div style={{ maxWidth: '56.25rem', margin: '0 auto' }}>
                     <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger}>
                         <motion.p variants={fadeUp} style={{ fontSize: '0.8rem', fontWeight: '700', color: '#aaa', letterSpacing: '0.1em', marginBottom: '1rem', textAlign: 'center' }}>WHAT WE STAND FOR</motion.p>
                         <motion.h2 variants={fadeUp} style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', lineHeight: 1.15, marginBottom: '3rem', textAlign: 'center' }}>
@@ -193,7 +193,7 @@ export default function AboutPage() {
 
             {/* ── TIMELINE ── */}
             <section style={{ padding: '6rem 2rem' }}>
-                <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+                <div style={{ maxWidth: '43.75rem', margin: '0 auto' }}>
                     <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger}>
                         <motion.p variants={fadeUp} style={{ fontSize: '0.8rem', fontWeight: '700', color: '#aaa', letterSpacing: '0.1em', marginBottom: '1rem', textAlign: 'center' }}>THE STORY</motion.p>
                         <motion.h2 variants={fadeUp} style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', marginBottom: '3.5rem', textAlign: 'center' }}>
@@ -223,7 +223,7 @@ export default function AboutPage() {
             {/* ── TEAM PHILOSOPHY ── */}
             <section style={{ background: '#0a0a0a', padding: '6rem 2rem' }}>
                 <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger}
-                    style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}
+                    style={{ maxWidth: '43.75rem', margin: '0 auto', textAlign: 'center' }}
                 >
                     <motion.div variants={fadeUp} style={{ fontSize: '3rem', marginBottom: '1.5rem' }}>🎧</motion.div>
                     <motion.h2 variants={fadeUp} style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: '900', letterSpacing: '-1.5px', color: '#fff', marginBottom: '1.5rem' }}>

@@ -131,7 +131,7 @@ export default function PricingPage() {
                     <h1 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: '900', letterSpacing: '-2px', color: '#0a0a0a', marginBottom: '0.75rem' }}>
                         Plans for every workflow
                     </h1>
-                    <p style={{ color: '#666', fontSize: '1.1rem', maxWidth: '460px', margin: '0 auto 1.25rem' }}>
+                    <p style={{ color: '#666', fontSize: '1.1rem', maxWidth: '28.75rem', margin: '0 auto 1.25rem' }}>
                         Start free. Upgrade when you need more. No hidden fees.
                     </p>
                     {/* Billing toggle */}
@@ -149,7 +149,7 @@ export default function PricingPage() {
             <section style={{ padding: '0.5rem 2rem 6rem' }}>
                 <motion.div
                     variants={stagger} initial="hidden" animate="show"
-                    style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', maxWidth: '1100px', margin: '0 auto' }}
+                    style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', maxWidth: '68.75rem', margin: '0 auto' }}
                 >
                     {plans.map((plan, i) => (
                         <motion.div key={i} variants={fadeUp} style={{
@@ -202,7 +202,7 @@ export default function PricingPage() {
 
             {/* FAQ */}
             <section style={{ padding: '4rem 2rem 8rem', background: '#fafafa', borderTop: '1px solid #f0f0f0' }}>
-                <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+                <div style={{ maxWidth: '43.75rem', margin: '0 auto' }}>
                     <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-1px', marginBottom: '3rem', textAlign: 'center', color: '#0a0a0a' }}>
                         Frequently asked questions
                     </motion.h2>

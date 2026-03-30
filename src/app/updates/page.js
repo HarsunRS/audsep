@@ -116,7 +116,7 @@ export default function UpdatesPage() {
                     <h1 style={{ fontSize: 'clamp(2.25rem, 5vw, 3.5rem)', fontWeight: '900', letterSpacing: '-2px', color: '#0a0a0a', marginBottom: '1rem' }}>
                         What's new in AudSep
                     </h1>
-                    <p style={{ color: '#666', fontSize: '1.05rem', maxWidth: '480px', margin: '0 auto', lineHeight: 1.6 }}>
+                    <p style={{ color: '#666', fontSize: '1.05rem', maxWidth: '30rem', margin: '0 auto', lineHeight: 1.6 }}>
                         We ship improvements every week. Here's a full log of everything we've built, fixed, and launched.
                     </p>
                 </motion.div>
@@ -124,7 +124,7 @@ export default function UpdatesPage() {
 
             {/* Timeline */}
             <section style={{ padding: '0 2rem 8rem' }}>
-                <div style={{ maxWidth: '760px', margin: '0 auto' }}>
+                <div style={{ maxWidth: '47.50rem', margin: '0 auto' }}>
                     <motion.div variants={stagger} initial="hidden" animate="show" style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                         {updates.map((release, i) => (
                             <motion.div key={i} variants={fadeUp} style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '2rem', alignItems: 'start' }}>
@@ -181,7 +181,7 @@ export default function UpdatesPage() {
                         style={{ marginTop: '4rem', textAlign: 'center', background: '#111', borderRadius: '20px', padding: '3rem 2rem' }}
                     >
                         <h2 style={{ fontSize: '1.75rem', fontWeight: '900', color: '#fff', letterSpacing: '-1px', marginBottom: '0.75rem' }}>Stay in the loop</h2>
-                        <p style={{ color: '#aaa', fontSize: '0.95rem', marginBottom: '2rem', maxWidth: '380px', margin: '0 auto 2rem', lineHeight: 1.6 }}>
+                        <p style={{ color: '#aaa', fontSize: '0.95rem', marginBottom: '2rem', maxWidth: '23.75rem', margin: '0 auto 2rem', lineHeight: 1.6 }}>
                             We ship weekly. Follow along on Twitter or just keep checking back here.
                         </p>
                         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>

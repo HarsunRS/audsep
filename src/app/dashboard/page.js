@@ -64,7 +64,7 @@ function DashboardContent() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#fafafa', padding: '6rem 2rem 4rem' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '56.25rem', margin: '0 auto' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
