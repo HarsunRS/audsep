@@ -63,23 +63,26 @@ export default function AppPage() {
         posthog.capture('separation_started', { model: modelConfig.model, category: modelConfig.category });
 
         try {
-            // ── Step 1: Upload file directly to Supabase Storage from the browser.
-            // This completely bypasses Vercel's 4.5MB body limit.
-            const { createClient } = await import('@supabase/supabase-js');
-            const supabase = createClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL,
-                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-            );
+            // ── Step 1: Get a server-signed upload URL (avoids RLS/auth issues)
+            setStatusLabel('Uploading…');
+            const urlRes = await fetch('/api/upload-url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename: file.name, contentType: file.type || 'audio/*' }),
+            });
+            if (!urlRes.ok) {
+                const e = await urlRes.json().catch(() => ({}));
+                throw new Error(e.error || 'Could not get upload URL');
+            }
+            const { signedUrl, storagePath } = await urlRes.json();
 
-            const timestamp = Date.now();
-            const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-            const storagePath = `uploads/${timestamp}_${safeFilename}`;
-
-            const { error: uploadError } = await supabase.storage
-                .from('inputs')
-                .upload(storagePath, file, { upsert: true, contentType: file.type || 'audio/*' });
-
-            if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+            // ── Upload the file directly to Supabase Storage via the signed URL
+            const uploadRes = await fetch(signedUrl, {
+                method: 'PUT',
+                headers: { 'Content-Type': file.type || 'audio/*' },
+                body: file,
+            });
+            if (!uploadRes.ok) throw new Error(`Upload failed: HTTP ${uploadRes.status}`);
             setProgress(30);
             setStatusLabel('Queuing job…');
 
