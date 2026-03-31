@@ -1,6 +1,8 @@
 -- Atomic usage check-and-increment to prevent race conditions.
 -- Run this in Supabase SQL Editor after 001_init.sql.
 
+DROP FUNCTION IF EXISTS check_and_increment_usage(TEXT);
+
 CREATE OR REPLACE FUNCTION check_and_increment_usage(p_clerk_id TEXT)
 RETURNS TABLE(allowed BOOLEAN, used INT, lim INT, user_plan TEXT, user_id UUID)
 LANGUAGE plpgsql
