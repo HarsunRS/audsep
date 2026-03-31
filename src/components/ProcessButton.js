@@ -4,7 +4,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Wand2 } from 'lucide-react';
 
-export default function ProcessButton({ isProcessing, progress, onClick, disabled }) {
+export default function ProcessButton({ isProcessing, progress, statusLabel, onClick, onCancel, disabled }) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -79,7 +79,7 @@ export default function ProcessButton({ isProcessing, progress, onClick, disable
                         }}
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>Separating Audio...</span>
+                            <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{statusLabel || 'Separating Audio...'}</span>
                             <span style={{ fontWeight: '700', color: 'var(--primary)' }}>{progress}%</span>
                         </div>
 
@@ -120,6 +120,24 @@ export default function ProcessButton({ isProcessing, progress, onClick, disable
                                 );
                             })}
                         </div>
+
+                        {/* Cancel button */}
+                        {onCancel && (
+                            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                <button
+                                    onClick={onCancel}
+                                    style={{
+                                        background: 'transparent', border: '1px solid #ddd', borderRadius: '8px',
+                                        padding: '0.4rem 1.2rem', cursor: 'pointer', fontSize: '0.82rem',
+                                        fontWeight: '600', color: '#888', transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={e => { e.target.style.borderColor = '#111'; e.target.style.color = '#111'; }}
+                                    onMouseLeave={e => { e.target.style.borderColor = '#ddd'; e.target.style.color = '#888'; }}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>

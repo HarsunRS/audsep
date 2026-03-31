@@ -36,6 +36,7 @@ export default function AppPage() {
     const [upgradePrompt, setUpgradePrompt] = useState(false);
 
     const processingRef = useRef(false);
+    const cancelRef = useRef(false);
 
     useEffect(() => {
         const h = (e) => setMousePos({ x: e.clientX, y: e.clientY });
@@ -51,9 +52,18 @@ export default function AppPage() {
         } catch { }
     };
 
+    const handleCancel = () => {
+        cancelRef.current = true;
+        processingRef.current = false;
+        setIsProcessing(false);
+        setProgress(0);
+        setStatusLabel('');
+    };
+
     const handleProcess = async () => {
         if (!file || processingRef.current) return;
         processingRef.current = true;
+        cancelRef.current = false;
         setIsProcessing(true);
         setProgress(5);
         setStatusLabel('Uploading…');
@@ -129,7 +139,9 @@ export default function AppPage() {
             const maxAttempts = 120; // 6 min max (3s × 120)
 
             while (attempts < maxAttempts) {
+                if (cancelRef.current) break; // User cancelled
                 await new Promise(r => setTimeout(r, 3000));
+                if (cancelRef.current) break;
                 attempts++;
 
                 const pollRes = await fetch(`/api/jobs/${jobId}`);
@@ -137,7 +149,10 @@ export default function AppPage() {
 
                 const job = await pollRes.json();
 
-                if (job.status === 'processing') {
+                if (job.status === 'queued') {
+                    setStatusLabel('Waiting for worker…');
+                } else if (job.status === 'processing') {
+                    setStatusLabel('Separating Audio…');
                     setProgress(prev => Math.min(prev + 2, 90));
                 } else if (job.status === 'done') {
                     setProgress(100);
@@ -233,7 +248,7 @@ export default function AppPage() {
                         />
                     </motion.div>
                     <motion.div variants={fadeUp}>
-                        <ProcessButton isProcessing={isProcessing} progress={progress} statusLabel={statusLabel} onClick={handleProcess} disabled={!file} />
+                        <ProcessButton isProcessing={isProcessing} progress={progress} statusLabel={statusLabel} onClick={handleProcess} onCancel={handleCancel} disabled={!file} />
                     </motion.div>
 
                     <motion.div
