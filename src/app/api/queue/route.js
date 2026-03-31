@@ -7,15 +7,13 @@ const ALLOWED_CATEGORIES = ['music', 'speech', 'noise', 'wind'];
 
 // Each model maps to the minimum tier required to use it.
 // 3-tier model gating matching the pricing page:
-//   free:  mdx_extra_q, denoiser
-//   basic: mdx_extra, htdemucs  (+free)
-//   pro:   htdemucs_ft, htdemucs_6s, htdemucs_hybrid, denoiser_dns64  (+basic+free)
+//   free:  htdemucs, denoiser
+//   basic: htdemucs_ft, htdemucs_6s  (+free)
+//   pro:   htdemucs_hybrid, denoiser_dns64  (+basic+free)
 const MODEL_TIERS = {
-    'mdx_extra_q':     'free',
-    'mdx_extra':       'basic',
-    'htdemucs':        'basic',
-    'htdemucs_ft':     'pro',
-    'htdemucs_6s':     'pro',
+    'htdemucs':        'free',
+    'htdemucs_ft':     'basic',
+    'htdemucs_6s':     'basic',
     'htdemucs_hybrid': 'pro',
     'denoiser':        'free',
     'denoiser_dns64':  'pro',

@@ -3,7 +3,7 @@ import sys
 try:
     from demucs.pretrained import get_model
 
-    models = ['mdx_extra_q', 'mdx_extra', 'htdemucs', 'htdemucs_ft', 'htdemucs_6s']
+    models = ['htdemucs', 'htdemucs_ft', 'htdemucs_6s']
     for m in models:
         try:
             get_model(m)
