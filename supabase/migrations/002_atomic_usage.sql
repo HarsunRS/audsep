@@ -2,7 +2,7 @@
 -- Run this in Supabase SQL Editor after 001_init.sql.
 
 CREATE OR REPLACE FUNCTION check_and_increment_usage(p_clerk_id TEXT)
-RETURNS TABLE(allowed BOOLEAN, used INT, lim INT, plan TEXT, uid UUID)
+RETURNS TABLE(allowed BOOLEAN, used INT, lim INT, user_plan TEXT, user_id UUID)
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -24,7 +24,7 @@ BEGIN
          VALUES (p_clerk_id, 'free', 1, v_now)
       RETURNING id, plan, credits_used_today, credits_reset_at INTO v_user;
 
-    RETURN QUERY SELECT true, 1, 3, 'free'::TEXT, v_user.id;
+    RETURN QUERY SELECT true, 1, 3, 'free'::TEXT, v_user.id::UUID;
     RETURN;
   END IF;
 
@@ -60,11 +60,11 @@ BEGIN
            credits_reset_at   = v_now
      WHERE id = v_user.id;
 
-    RETURN QUERY SELECT true, 1, v_limit, v_user.plan, v_user.id;
+    RETURN QUERY SELECT true, 1, v_limit, v_user.plan::TEXT, v_user.id::UUID;
 
   ELSIF v_user.credits_used_today >= v_limit THEN
     -- Limit already reached — do not increment
-    RETURN QUERY SELECT false, v_user.credits_used_today, v_limit, v_user.plan, v_user.id;
+    RETURN QUERY SELECT false, v_user.credits_used_today, v_limit, v_user.plan::TEXT, v_user.id::UUID;
 
   ELSE
     -- Normal increment
@@ -72,7 +72,7 @@ BEGIN
        SET credits_used_today = credits_used_today + 1
      WHERE id = v_user.id;
 
-    RETURN QUERY SELECT true, v_user.credits_used_today + 1, v_limit, v_user.plan, v_user.id;
+    RETURN QUERY SELECT true, v_user.credits_used_today + 1, v_limit, v_user.plan::TEXT, v_user.id::UUID;
   END IF;
 END;
 $$;
