@@ -8,6 +8,9 @@ export async function DELETE(req, { params }) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  // Next.js 15+ makes params a Promise — await it before accessing properties
+  const { id: jobId } = await params;
+
   const db = createServerClient();
 
   // Resolve the internal user id for this Clerk user
@@ -24,7 +27,7 @@ export async function DELETE(req, { params }) {
   const { data: job, error } = await db
     .from('jobs')
     .update({ status: 'cancelled' })
-    .eq('id', params.id)
+    .eq('id', jobId)
     .eq('user_id', user.id)                    // ownership check
     .in('status', ['queued', 'processing'])    // allow cancelling mid-run
     .select('id, status')
@@ -45,11 +48,14 @@ export async function GET(req, { params }) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  // Next.js 15+ makes params a Promise — await it before accessing properties
+  const { id: jobId } = await params;
+
   const db = createServerClient();
   const { data: job, error } = await db
     .from('jobs')
     .select('id, status, output_urls, filename, model, category, error, created_at')
-    .eq('id', params.id)
+    .eq('id', jobId)
     .single();
 
   if (error || !job) return NextResponse.json({ error: 'Job not found' }, { status: 404 });
