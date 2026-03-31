@@ -6,22 +6,23 @@ import { createServerClient } from '../../../../lib/supabase';
 const ALLOWED_CATEGORIES = ['music', 'speech', 'noise', 'wind'];
 
 // Each model maps to the minimum tier required to use it.
+// Free and basic share the same models — only usage limits differ.
+// Pro unlocks 6-stem, studio unlocks hybrid.
 const MODEL_TIERS = {
     'mdx_extra_q':     'free',
     'mdx_extra':       'free',
-    'htdemucs':        'basic',
-    'htdemucs_ft':     'basic',
+    'htdemucs':        'free',
+    'htdemucs_ft':     'free',
     'htdemucs_6s':     'pro',
     'htdemucs_hybrid': 'studio',
     'denoiser':        'free',
     'denoiser_dns64':  'pro',
 };
 const ALLOWED_MODELS = Object.keys(MODEL_TIERS);
-const TIER_ORDER = { free: 0, basic: 1, pro: 2, studio: 3 };
+const TIER_ORDER = { free: 0, pro: 1, studio: 2 };
 
 function planToTier(plan) {
-    if (!plan || plan === 'free') return 'free';
-    if (plan.startsWith('basic')) return 'basic';
+    if (!plan || plan === 'free' || plan.startsWith('basic')) return 'free';
     if (plan.startsWith('studio') || plan === 'team') return 'studio';
     return 'pro';
 }

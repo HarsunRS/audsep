@@ -10,16 +10,16 @@ const TIER_ORDER = { free: 0, basic: 1, pro: 2, studio: 3 };
 
 function planToTier(plan) {
     if (!plan || plan === 'free') return 'free';
-    if (plan.startsWith('basic')) return 'basic';
+    // Basic has same model access as free — only usage limits differ
+    if (plan.startsWith('basic')) return 'free';
     if (plan.startsWith('studio') || plan === 'team') return 'studio';
-    return 'pro'; // pro-monthly, pro-yearly, pro
+    return 'pro';
 }
 
 const TIER_META = {
-    free:   { label: 'FREE',   color: '#6b7280' },
-    basic:  { label: 'BASIC',  color: '#2563eb' },
-    pro:    { label: 'PRO',    color: '#16a34a' },
-    studio: { label: 'STUDIO', color: '#7c3aed' },
+    free:   { label: 'FREE & BASIC', color: '#6b7280' },
+    pro:    { label: 'PRO',          color: '#16a34a' },
+    studio: { label: 'STUDIO',       color: '#7c3aed' },
 };
 
 // ── Task definitions ───────────────────────────────────────────────────────────
@@ -30,89 +30,25 @@ const TASKS = [
 ];
 
 // ── Model catalogue ────────────────────────────────────────────────────────────
+// Free and Basic have the same models — difference is only usage limits (enforced by the DB).
+// Cards show "FREE & BASIC" header so users understand both tiers get access.
 const MODELS = {
     music: [
-        {
-            tier: 'free', value: 'mdx_extra_q',
-            label: 'MDX-Net Q',
-            desc: 'Fast & solid. Good for quick previews.',
-            quality: 2, speed: 4,
-            stems: ['Vocals', 'Drums', 'Bass', 'Other'],
-        },
-        {
-            tier: 'free', value: 'mdx_extra',
-            label: 'Demucs v3',
-            desc: 'Balanced quality. Works on all genres.',
-            quality: 3, speed: 3,
-            stems: ['Vocals', 'Drums', 'Bass', 'Other'],
-        },
-        {
-            tier: 'basic', value: 'htdemucs',
-            label: 'HTDemucs',
-            desc: 'Best overall stem quality across genres.',
-            quality: 4, speed: 2,
-            stems: ['Vocals', 'Drums', 'Bass', 'Other'],
-        },
-        {
-            tier: 'basic', value: 'htdemucs_ft',
-            label: 'HTDemucs Fine-tuned',
-            desc: 'Extra clean on modern pop & EDM.',
-            quality: 4, speed: 2,
-            stems: ['Vocals', 'Drums', 'Bass', 'Other'],
-        },
-        {
-            tier: 'pro', value: 'htdemucs_6s',
-            label: 'HTDemucs 6-stem',
-            desc: 'Adds guitar + piano isolation.',
-            quality: 4, speed: 1,
-            stems: ['Vocals', 'Drums', 'Bass', 'Guitar', 'Piano', 'Other'],
-        },
-        {
-            tier: 'studio', value: 'htdemucs_hybrid',
-            label: 'HTDemucs Hybrid',
-            desc: 'Highest fidelity. Studio-grade output.',
-            quality: 5, speed: 1,
-            stems: ['Vocals', 'Drums', 'Bass', 'Guitar', 'Piano', 'Other'],
-        },
+        { tier: 'free', value: 'mdx_extra_q',    label: 'MDX-Net Q',            desc: 'Fast & solid. Good for quick previews.',        quality: 2, speed: 4, stems: ['Vocals', 'Drums', 'Bass', 'Other'] },
+        { tier: 'free', value: 'mdx_extra',       label: 'Demucs v3',            desc: 'Balanced quality. Works on all genres.',        quality: 3, speed: 3, stems: ['Vocals', 'Drums', 'Bass', 'Other'] },
+        { tier: 'free', value: 'htdemucs',         label: 'HTDemucs',             desc: 'Best overall stem quality across genres.',      quality: 4, speed: 2, stems: ['Vocals', 'Drums', 'Bass', 'Other'] },
+        { tier: 'free', value: 'htdemucs_ft',      label: 'HTDemucs Fine-tuned',  desc: 'Extra clean on modern pop & EDM.',              quality: 4, speed: 2, stems: ['Vocals', 'Drums', 'Bass', 'Other'] },
+        { tier: 'pro',  value: 'htdemucs_6s',      label: 'HTDemucs 6-stem',      desc: 'Adds guitar + piano isolation.',                quality: 4, speed: 1, stems: ['Vocals', 'Drums', 'Bass', 'Guitar', 'Piano', 'Other'] },
+        { tier: 'studio', value: 'htdemucs_hybrid',label: 'HTDemucs Hybrid',      desc: 'Highest fidelity. Studio-grade output.',        quality: 5, speed: 1, stems: ['Vocals', 'Drums', 'Bass', 'Guitar', 'Piano', 'Other'] },
     ],
     speech: [
-        {
-            tier: 'free', value: 'mdx_extra_q',
-            label: 'Quick Voice Lift',
-            desc: 'Fast vocal vs. background separation.',
-            quality: 2, speed: 4,
-            stems: ['Vocals', 'No Vocals'],
-        },
-        {
-            tier: 'basic', value: 'htdemucs',
-            label: 'HTDemucs Voice',
-            desc: 'Clean vocal isolation for podcasts & calls.',
-            quality: 4, speed: 2,
-            stems: ['Vocals', 'No Vocals'],
-        },
-        {
-            tier: 'pro', value: 'htdemucs_ft',
-            label: 'Fine-tuned Voice',
-            desc: 'Cleanest isolation, minimal bleed.',
-            quality: 5, speed: 1,
-            stems: ['Vocals', 'No Vocals'],
-        },
+        { tier: 'free', value: 'mdx_extra_q',    label: 'Quick Voice Lift',      desc: 'Fast vocal vs. background separation.',         quality: 2, speed: 4, stems: ['Vocals', 'Background'] },
+        { tier: 'free', value: 'htdemucs',         label: 'HTDemucs Voice',        desc: 'Clean vocal isolation for podcasts & calls.',   quality: 4, speed: 2, stems: ['Vocals', 'Background'] },
+        { tier: 'pro',  value: 'htdemucs_ft',      label: 'Fine-tuned Voice',      desc: 'Cleanest isolation, minimal bleed.',            quality: 5, speed: 1, stems: ['Vocals', 'Background'] },
     ],
     noise: [
-        {
-            tier: 'free', value: 'denoiser',
-            label: 'Environment Denoiser',
-            desc: 'Remove hiss, hum, and room noise.',
-            quality: 3, speed: 4,
-            stems: ['Enhanced'],
-        },
-        {
-            tier: 'pro', value: 'denoiser_dns64',
-            label: 'DNS64 Denoiser',
-            desc: 'Aggressive noise removal for tough recordings.',
-            quality: 5, speed: 2,
-            stems: ['Enhanced'],
-        },
+        { tier: 'free', value: 'denoiser',         label: 'Environment Denoiser',  desc: 'Remove hiss, hum, and room noise.',             quality: 3, speed: 4, stems: ['Enhanced'] },
+        { tier: 'pro',  value: 'denoiser_dns64',   label: 'DNS64 Denoiser',        desc: 'Aggressive noise removal for tough recordings.', quality: 5, speed: 2, stems: ['Enhanced'] },
     ],
 };
 
@@ -171,8 +107,8 @@ export default function ConfigSection({
 
     const taskModels = MODELS[category] || [];
 
-    // Group by tier
-    const tierGroups = ['free', 'basic', 'pro', 'studio']
+    // Group by tier — basic is merged into free (same models, different usage limits)
+    const tierGroups = ['free', 'pro', 'studio']
         .map(tier => ({ tier, models: taskModels.filter(m => m.tier === tier) }))
         .filter(g => g.models.length > 0);
 
@@ -221,11 +157,12 @@ export default function ConfigSection({
                                 <div style={{ flex: 1, height: '1px', background: '#f0f0f0' }} />
                             </div>
 
-                            {/* Cards */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem' }}>
-                                {models.map(m => {
+                            {/* Cards — 2 columns; last card spans full width if count is odd */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                {models.map((m, idx) => {
                                     const selected = m.value === model;
                                     const locked = !accessible;
+                                    const isLastOdd = models.length % 2 !== 0 && idx === models.length - 1;
                                     return (
                                         <button
                                             key={m.value}
@@ -239,6 +176,7 @@ export default function ConfigSection({
                                                 cursor: locked ? 'not-allowed' : 'pointer',
                                                 opacity: locked ? 0.5 : 1,
                                                 transition: 'all 0.15s',
+                                                gridColumn: isLastOdd ? 'span 2' : undefined,
                                             }}
                                         >
                                             {/* Checkmark */}
