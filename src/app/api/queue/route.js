@@ -3,6 +3,9 @@ import { auth } from '@clerk/nextjs/server';
 import { checkAndIncrementUsage } from '../../../../lib/usage';
 import { createServerClient } from '../../../../lib/supabase';
 
+const ALLOWED_MODELS = ['htdemucs', 'htdemucs_ft', 'htdemucs_6s', 'mdx_extra_q'];
+const ALLOWED_CATEGORIES = ['music', 'speech', 'noise', 'wind'];
+
 /**
  * POST /api/queue
  * Body: { inputPath, filename, model, category, vocalOnly, trimStart, trimEnd }
@@ -33,6 +36,22 @@ export async function POST(request) {
       return NextResponse.json({ error: 'inputPath is required' }, { status: 400 });
     }
 
+    // Whitelist model and category to prevent injection of arbitrary values into the worker
+    if (!ALLOWED_MODELS.includes(model)) {
+      return NextResponse.json({ error: `Invalid model. Must be one of: ${ALLOWED_MODELS.join(', ')}` }, { status: 400 });
+    }
+    if (!ALLOWED_CATEGORIES.includes(category)) {
+      return NextResponse.json({ error: `Invalid category. Must be one of: ${ALLOWED_CATEGORIES.join(', ')}` }, { status: 400 });
+    }
+
+    // Validate trim params as non-negative finite numbers to prevent FFmpeg argument injection
+    const parsedTrimStart = parseFloat(trimStart);
+    const parsedTrimEnd = parseFloat(trimEnd);
+    if (!isFinite(parsedTrimStart) || parsedTrimStart < 0 ||
+        !isFinite(parsedTrimEnd)   || parsedTrimEnd < 0) {
+      return NextResponse.json({ error: 'trimStart and trimEnd must be non-negative numbers' }, { status: 400 });
+    }
+
     const db = createServerClient();
 
     const { data: job, error: jobError } = await db.from('jobs').insert({
@@ -43,6 +62,8 @@ export async function POST(request) {
       vocal_only: vocalOnly,
       filename: filename || 'audio',
       input_url: inputPath,
+      trim_start: parsedTrimStart || null,
+      trim_end: (parsedTrimEnd > parsedTrimStart) ? parsedTrimEnd : null,
     }).select().single();
 
     if (jobError || !job) {

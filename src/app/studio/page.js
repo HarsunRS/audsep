@@ -37,6 +37,7 @@ export default function AppPage() {
 
     const processingRef = useRef(false);
     const cancelRef = useRef(false);
+    const jobIdRef = useRef(null);
 
     useEffect(() => {
         const h = (e) => setMousePos({ x: e.clientX, y: e.clientY });
@@ -52,12 +53,22 @@ export default function AppPage() {
         } catch { }
     };
 
-    const handleCancel = () => {
+    const handleCancel = async () => {
         cancelRef.current = true;
         processingRef.current = false;
         setIsProcessing(false);
         setProgress(0);
         setStatusLabel('');
+
+        // Ask the server to cancel the job if it hasn't been picked up yet
+        if (jobIdRef.current) {
+            try {
+                await fetch(`/api/jobs/${jobIdRef.current}`, { method: 'DELETE' });
+            } catch {
+                // Best-effort — if the request fails the job may still run on the worker
+            }
+            jobIdRef.current = null;
+        }
     };
 
     const handleProcess = async () => {
@@ -131,6 +142,7 @@ export default function AppPage() {
             }
 
             const { jobId } = await queueRes.json();
+            jobIdRef.current = jobId;
             setProgress(40);
             setStatusLabel('Separating Audio…');
 
@@ -182,6 +194,7 @@ export default function AppPage() {
             alert(`Error: ${error.message || 'Unknown error'}`);
         } finally {
             processingRef.current = false;
+            jobIdRef.current = null;
             setIsProcessing(false);
         }
     };

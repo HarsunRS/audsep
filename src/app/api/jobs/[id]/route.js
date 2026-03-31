@@ -2,6 +2,42 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createServerClient } from '../../../../../lib/supabase';
 
+// DELETE /api/jobs/[id] — cancel a queued job (no-op if already processing/done)
+export async function DELETE(req, { params }) {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const db = createServerClient();
+
+  // Resolve the internal user id for this Clerk user
+  const { data: user } = await db
+    .from('users')
+    .select('id')
+    .eq('clerk_id', userId)
+    .single();
+
+  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+  // Only cancel jobs that are still queued — a processing job cannot be stopped safely
+  const { data: job, error } = await db
+    .from('jobs')
+    .update({ status: 'cancelled' })
+    .eq('id', params.id)
+    .eq('user_id', user.id)   // ownership check
+    .eq('status', 'queued')   // only if not yet picked up by worker
+    .select('id, status')
+    .single();
+
+  if (error || !job) {
+    return NextResponse.json(
+      { error: 'Job not found, not owned by you, or already being processed.' },
+      { status: 409 }
+    );
+  }
+
+  return NextResponse.json({ cancelled: true, id: job.id });
+}
+
 // GET /api/jobs/[id] — poll job status
 export async function GET(req, { params }) {
   const { userId } = await auth();
