@@ -29,6 +29,7 @@ export default function AppPage() {
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [progress, setProgress] = useState(0);
+    const [statusLabel, setStatusLabel] = useState('');
     const [tracksUrls, setTracksUrls] = useState(null);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [usage, setUsage] = useState({ used: 0, limit: 3, plan: 'free' });
@@ -54,85 +55,108 @@ export default function AppPage() {
         if (!file || processingRef.current) return;
         processingRef.current = true;
         setIsProcessing(true);
-        setProgress(0);
+        setProgress(5);
+        setStatusLabel('Uploading…');
         setTracksUrls(null);
         setUpgradePrompt(false);
 
         posthog.capture('separation_started', { model: modelConfig.model, category: modelConfig.category });
-        const startTime = Date.now();
 
         try {
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('model', modelConfig.model);
-            formData.append('category', modelConfig.category);
-            formData.append('vocalOnly', vocalOnly.toString());
-            if (trimStart) formData.append('trimStart', String(trimStart));
-            if (trimEnd > trimStart) formData.append('trimEnd', String(trimEnd));
+            // ── Step 1: Upload file directly to Supabase Storage from the browser.
+            // This completely bypasses Vercel's 4.5MB body limit.
+            const { createClient } = await import('@supabase/supabase-js');
+            const supabase = createClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL,
+                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+            );
 
-            const res = await fetch('/api/separate', {
-                method: 'POST', 
-                body: formData,
-                redirect: 'manual' // Prevent browser from blindly re-posting 5MB files to /signin on 307 auth redirect
+            const timestamp = Date.now();
+            const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+            const storagePath = `uploads/${timestamp}_${safeFilename}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('inputs')
+                .upload(storagePath, file, { upsert: true, contentType: file.type || 'audio/*' });
+
+            if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+            setProgress(30);
+            setStatusLabel('Queuing job…');
+
+            // ── Step 2: Queue the job via a lightweight JSON-only API call (no file body).
+            const queueRes = await fetch('/api/queue', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                redirect: 'manual',
+                body: JSON.stringify({
+                    inputPath: storagePath,
+                    filename: file.name,
+                    model: modelConfig.model,
+                    category: modelConfig.category,
+                    vocalOnly,
+                    trimStart: trimStart || 0,
+                    trimEnd: trimEnd > trimStart ? trimEnd : 0,
+                }),
             });
 
-            if (res.type === 'opaqueredirect' || res.status === 307 || res.status === 302 || res.status === 401) {
+            if (queueRes.type === 'opaqueredirect' || queueRes.status === 307 || queueRes.status === 401) {
                 window.location.href = '/signin';
                 return;
             }
-
-            if (res.status === 429) {
-                const data = await res.json();
+            if (queueRes.status === 429) {
                 setUpgradePrompt(true);
                 return;
             }
-
-            if (!res.ok) {
-                let errorMsg = `HTTP Error ${res.status} (${res.statusText})`;
-                try {
-                    const rawText = await res.text();
-                    errorMsg += ` - Body: ${rawText.slice(0, 500)}`;
-                } catch (e) {}
-                console.error('[API] Server error response:', errorMsg);
-                throw new Error(errorMsg);
+            if (!queueRes.ok) {
+                const errData = await queueRes.json().catch(() => ({}));
+                throw new Error(errData.error || `Queue error: HTTP ${queueRes.status}`);
             }
 
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder('utf-8');
-            let done = false;
+            const { jobId } = await queueRes.json();
+            setProgress(40);
+            setStatusLabel('Separating Audio…');
 
-            while (!done) {
-                const { value, done: readerDone } = await reader.read();
-                done = readerDone;
-                if (value) {
-                    const lines = decoder.decode(value, { stream: true }).split('\n').filter(Boolean);
-                    for (const line of lines) {
-                        try {
-                            const data = JSON.parse(line);
-                            if (data.type === 'progress') {
-                                setProgress(data.percent);
-                            } else if (data.type === 'success') {
-                                setTracksUrls(data.tracks);
-                                posthog.capture('separation_complete', {
-                                    model: modelConfig.model,
-                                    stem_count: Object.keys(data.tracks || {}).length,
-                                });
-                                fetchUsage();
-                                setTimeout(() => {
-                                    document.getElementById('editor-section')?.scrollIntoView({ behavior: 'smooth' });
-                                }, 500);
-                            } else if (data.type === 'error') {
-                                throw new Error(data.message);
-                            }
-                        } catch (err) {
-                            console.warn('Parse error:', err);
-                        }
-                    }
+            // ── Step 3: Poll /api/jobs/[id] every 3s until done or failed.
+            let attempts = 0;
+            const maxAttempts = 120; // 6 min max (3s × 120)
+
+            while (attempts < maxAttempts) {
+                await new Promise(r => setTimeout(r, 3000));
+                attempts++;
+
+                const pollRes = await fetch(`/api/jobs/${jobId}`);
+                if (!pollRes.ok) continue;
+
+                const job = await pollRes.json();
+
+                if (job.status === 'processing') {
+                    setProgress(prev => Math.min(prev + 2, 90));
+                } else if (job.status === 'done') {
+                    setProgress(100);
+                    setStatusLabel('Done!');
+                    setTracksUrls(job.tracks);
+                    fetchUsage();
+                    posthog.capture('separation_complete', {
+                        model: modelConfig.model,
+                        stem_count: Object.keys(job.tracks || {}).length,
+                    });
+                    setTimeout(() => {
+                        document.getElementById('editor-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 500);
+                    break;
+                } else if (job.status === 'failed') {
+                    throw new Error(job.error || 'Separation failed on the worker.');
                 }
             }
+
+            if (attempts >= maxAttempts) {
+                throw new Error('Timed out waiting for the worker. Please try again.');
+            }
+
         } catch (error) {
             console.error('[Process] Error:', error);
-            alert(`Backend crashed: ${error.message || 'Unknown error'}`);
+            setStatusLabel('');
+            alert(`Error: ${error.message || 'Unknown error'}`);
         } finally {
             processingRef.current = false;
             setIsProcessing(false);
@@ -201,7 +225,7 @@ export default function AppPage() {
                         />
                     </motion.div>
                     <motion.div variants={fadeUp}>
-                        <ProcessButton isProcessing={isProcessing} progress={progress} onClick={handleProcess} disabled={!file} />
+                        <ProcessButton isProcessing={isProcessing} progress={progress} statusLabel={statusLabel} onClick={handleProcess} disabled={!file} />
                     </motion.div>
 
                     <motion.div
