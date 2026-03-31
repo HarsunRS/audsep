@@ -207,7 +207,9 @@ def process_job(job):
         if category in ("noise", "wind"):
             # ── Facebook denoiser ─────────────────────────────────────────────
             # Denoiser requires 16 kHz mono
-            mono_wav = os.path.join(tmpdir, "mono.wav")
+            noisy_dir = os.path.join(tmpdir, "noisy")
+            os.makedirs(noisy_dir, exist_ok=True)
+            mono_wav = os.path.join(noisy_dir, "mono.wav")
             subprocess.run(
                 ["ffmpeg", "-i", wav_path, "-ar", "16000", "-ac", "1", "-y", mono_wav],
                 check=True, capture_output=True, timeout=60,
@@ -216,7 +218,7 @@ def process_job(job):
             os.makedirs(enhanced_dir, exist_ok=True)
             cmd = [
                 str(VENV_BIN / "python"), "-m", "denoiser.enhance",
-                "--noisy_dir", os.path.dirname(mono_wav),
+                "--noisy_dir", noisy_dir,
                 "--out_dir",   enhanced_dir,
                 "--device",    "cpu",
             ]
