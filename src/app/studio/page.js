@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import UploadSection from '../../components/UploadSection';
 import ConfigSection from '../../components/ConfigSection';
@@ -18,6 +18,8 @@ const stagger = {
     hidden: {},
     show: { transition: { staggerChildren: 0.15 } }
 };
+
+const PENDING_JOB_KEY = 'audsep_pending_job';
 
 export default function AppPage() {
     const { user } = useUser();
@@ -38,13 +40,8 @@ export default function AppPage() {
     const processingRef = useRef(false);
     const cancelRef = useRef(false);
     const jobIdRef = useRef(null);
-
-    useEffect(() => {
-        const h = (e) => setMousePos({ x: e.clientX, y: e.clientY });
-        window.addEventListener('mousemove', h);
-        fetchUsage();
-        return () => window.removeEventListener('mousemove', h);
-    }, []);
+    // Set to true when the tab becomes visible so the poll loop wakes up immediately
+    const wakeRef = useRef(false);
 
     const fetchUsage = async () => {
         try {
@@ -53,19 +50,128 @@ export default function AppPage() {
         } catch { }
     };
 
+    /**
+     * Core polling loop. Extracted so it can be called both from handleProcess
+     * and from the mount-time recovery path (page refresh while job was running).
+     * Pass the model name separately so posthog gets the right value even when
+     * called from the recovery path where modelConfig may still be the default.
+     */
+    const runPolling = useCallback(async (jobId, model) => {
+        let attempts = 0;
+        const maxAttempts = 120; // 6 min at 3s intervals
+
+        while (attempts < maxAttempts) {
+            if (cancelRef.current) break;
+
+            // If the tab just came back into focus, skip the 3s wait and poll now
+            if (wakeRef.current) {
+                wakeRef.current = false;
+            } else {
+                await new Promise(r => setTimeout(r, 3000));
+            }
+
+            if (cancelRef.current) break;
+            attempts++;
+
+            let pollRes;
+            try {
+                pollRes = await fetch(`/api/jobs/${jobId}`);
+            } catch {
+                continue; // transient network error — keep trying
+            }
+            if (!pollRes.ok) continue;
+
+            const job = await pollRes.json();
+
+            if (job.status === 'queued') {
+                setStatusLabel('Waiting for worker…');
+            } else if (job.status === 'processing') {
+                setStatusLabel('Separating Audio…');
+                setProgress(prev => Math.min(prev + 2, 90));
+            } else if (job.status === 'done') {
+                setProgress(100);
+                setStatusLabel('Done!');
+                setTracksUrls(job.tracks);
+                sessionStorage.removeItem(PENDING_JOB_KEY);
+                fetchUsage();
+                posthog.capture('separation_complete', {
+                    model,
+                    stem_count: Object.keys(job.tracks || {}).length,
+                });
+                setTimeout(() => {
+                    document.getElementById('editor-section')?.scrollIntoView({ behavior: 'smooth' });
+                }, 500);
+                return; // exit cleanly
+            } else if (job.status === 'failed') {
+                sessionStorage.removeItem(PENDING_JOB_KEY);
+                throw new Error(job.error || 'Separation failed on the worker.');
+            } else if (job.status === 'cancelled') {
+                sessionStorage.removeItem(PENDING_JOB_KEY);
+                return; // exit silently — user cancelled
+            }
+        }
+
+        if (attempts >= maxAttempts) {
+            sessionStorage.removeItem(PENDING_JOB_KEY);
+            throw new Error('Timed out waiting for the worker. Please try again.');
+        }
+    }, []);
+
+    useEffect(() => {
+        const onMouseMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
+        window.addEventListener('mousemove', onMouseMove);
+        fetchUsage();
+
+        // Wake up the poll loop immediately when the user switches back to this tab
+        const onVisibility = () => {
+            if (document.visibilityState === 'visible') wakeRef.current = true;
+        };
+        document.addEventListener('visibilitychange', onVisibility);
+
+        // Recover any job that was running before a page refresh
+        const saved = sessionStorage.getItem(PENDING_JOB_KEY);
+        if (saved) {
+            try {
+                const { jobId, model } = JSON.parse(saved);
+                if (jobId) {
+                    jobIdRef.current = jobId;
+                    processingRef.current = true;
+                    cancelRef.current = false;
+                    setIsProcessing(true);
+                    setProgress(50);
+                    setStatusLabel('Reconnecting…');
+                    runPolling(jobId, model)
+                        .catch(err => alert(`Error: ${err.message || 'Unknown error'}`))
+                        .finally(() => {
+                            processingRef.current = false;
+                            jobIdRef.current = null;
+                            setIsProcessing(false);
+                        });
+                }
+            } catch {
+                sessionStorage.removeItem(PENDING_JOB_KEY);
+            }
+        }
+
+        return () => {
+            window.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('visibilitychange', onVisibility);
+        };
+    }, [runPolling]);
+
     const handleCancel = async () => {
         cancelRef.current = true;
         processingRef.current = false;
         setIsProcessing(false);
         setProgress(0);
         setStatusLabel('');
+        sessionStorage.removeItem(PENDING_JOB_KEY);
 
-        // Ask the server to cancel the job if it hasn't been picked up yet
         if (jobIdRef.current) {
             try {
                 await fetch(`/api/jobs/${jobIdRef.current}`, { method: 'DELETE' });
             } catch {
-                // Best-effort — if the request fails the job may still run on the worker
+                // best-effort
             }
             jobIdRef.current = null;
         }
@@ -84,8 +190,7 @@ export default function AppPage() {
         posthog.capture('separation_started', { model: modelConfig.model, category: modelConfig.category });
 
         try {
-            // ── Step 1: Get a server-signed upload URL (avoids RLS/auth issues)
-            setStatusLabel('Uploading…');
+            // ── Step 1: Get a server-signed upload URL
             const urlRes = await fetch('/api/upload-url', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -102,7 +207,7 @@ export default function AppPage() {
             }
             const { signedUrl, storagePath } = await urlRes.json();
 
-            // ── Upload the file directly to Supabase Storage via the signed URL
+            // ── Upload directly to Supabase Storage
             const uploadRes = await fetch(signedUrl, {
                 method: 'PUT',
                 headers: { 'Content-Type': file.type || 'audio/*' },
@@ -112,7 +217,7 @@ export default function AppPage() {
             setProgress(30);
             setStatusLabel('Queuing job…');
 
-            // ── Step 2: Queue the job via a lightweight JSON-only API call (no file body).
+            // ── Step 2: Queue the job
             const queueRes = await fetch('/api/queue', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -143,50 +248,15 @@ export default function AppPage() {
 
             const { jobId } = await queueRes.json();
             jobIdRef.current = jobId;
+
+            // Persist so a page refresh can resume polling
+            sessionStorage.setItem(PENDING_JOB_KEY, JSON.stringify({ jobId, model: modelConfig.model }));
+
             setProgress(40);
             setStatusLabel('Separating Audio…');
 
-            // ── Step 3: Poll /api/jobs/[id] every 3s until done or failed.
-            let attempts = 0;
-            const maxAttempts = 120; // 6 min max (3s × 120)
-
-            while (attempts < maxAttempts) {
-                if (cancelRef.current) break; // User cancelled
-                await new Promise(r => setTimeout(r, 3000));
-                if (cancelRef.current) break;
-                attempts++;
-
-                const pollRes = await fetch(`/api/jobs/${jobId}`);
-                if (!pollRes.ok) continue;
-
-                const job = await pollRes.json();
-
-                if (job.status === 'queued') {
-                    setStatusLabel('Waiting for worker…');
-                } else if (job.status === 'processing') {
-                    setStatusLabel('Separating Audio…');
-                    setProgress(prev => Math.min(prev + 2, 90));
-                } else if (job.status === 'done') {
-                    setProgress(100);
-                    setStatusLabel('Done!');
-                    setTracksUrls(job.tracks);
-                    fetchUsage();
-                    posthog.capture('separation_complete', {
-                        model: modelConfig.model,
-                        stem_count: Object.keys(job.tracks || {}).length,
-                    });
-                    setTimeout(() => {
-                        document.getElementById('editor-section')?.scrollIntoView({ behavior: 'smooth' });
-                    }, 500);
-                    break;
-                } else if (job.status === 'failed') {
-                    throw new Error(job.error || 'Separation failed on the worker.');
-                }
-            }
-
-            if (attempts >= maxAttempts) {
-                throw new Error('Timed out waiting for the worker. Please try again.');
-            }
+            // ── Step 3: Poll until done
+            await runPolling(jobId, modelConfig.model);
 
         } catch (error) {
             console.error('[Process] Error:', error);
