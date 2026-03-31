@@ -7,23 +7,23 @@ const ALLOWED_CATEGORIES = ['music', 'speech', 'noise', 'wind'];
 
 // Each model maps to the minimum tier required to use it.
 const MODEL_TIERS = {
-    'mdx_extra_q':      'free',
-    'mdx_extra':        'free',
-    'htdemucs':         'basic',
-    'htdemucs_ft':      'basic',
-    'htdemucs_6s':      'pro',
-    'htdemucs_hybrid':  'pro',
-    // non-music models (always allowed for any signed-in user)
-    'denoiser':         'free',
-    'denoiser_dns64':   'free',
+    'mdx_extra_q':     'free',
+    'mdx_extra':       'free',
+    'htdemucs':        'basic',
+    'htdemucs_ft':     'basic',
+    'htdemucs_6s':     'pro',
+    'htdemucs_hybrid': 'studio',
+    'denoiser':        'free',
+    'denoiser_dns64':  'pro',
 };
 const ALLOWED_MODELS = Object.keys(MODEL_TIERS);
-const TIER_ORDER = { free: 0, basic: 1, pro: 2 };
+const TIER_ORDER = { free: 0, basic: 1, pro: 2, studio: 3 };
 
 function planToTier(plan) {
     if (!plan || plan === 'free') return 'free';
     if (plan.startsWith('basic')) return 'basic';
-    return 'pro'; // pro, studio, team, etc.
+    if (plan.startsWith('studio') || plan === 'team') return 'studio';
+    return 'pro';
 }
 
 // Comma-separated Clerk user IDs that bypass usage limits (e.g. for testing).

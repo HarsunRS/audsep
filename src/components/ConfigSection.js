@@ -2,89 +2,128 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Mic2, Volume2, Wind, Lock } from 'lucide-react';
+import { Music2, Mic2, Volume2, Lock } from 'lucide-react';
 import TrimSlider from './TrimSlider';
 
-// ── Model catalogue ────────────────────────────────────────────────────────────
-const TIER_ORDER = { free: 0, basic: 1, pro: 2 };
+// ── Tier helpers ───────────────────────────────────────────────────────────────
+const TIER_ORDER = { free: 0, basic: 1, pro: 2, studio: 3 };
 
 function planToTier(plan) {
     if (!plan || plan === 'free') return 'free';
     if (plan.startsWith('basic')) return 'basic';
-    return 'pro'; // pro, studio, team
+    if (plan.startsWith('studio') || plan === 'team') return 'studio';
+    return 'pro'; // pro-monthly, pro-yearly, pro
 }
 
-const MUSIC_MODELS = [
-    {
-        tier: 'free',
-        value: 'mdx_extra_q',
-        label: 'MDX-Net Q',
-        desc: 'Fast & solid. Good for quick previews.',
-        quality: 2, speed: 4,
-        stems: ['Vocals', 'Drums', 'Bass', 'Other'],
-    },
-    {
-        tier: 'free',
-        value: 'mdx_extra',
-        label: 'Demucs v3',
-        desc: 'Balanced quality. Works on all genres.',
-        quality: 3, speed: 3,
-        stems: ['Vocals', 'Drums', 'Bass', 'Other'],
-    },
-    {
-        tier: 'basic',
-        value: 'htdemucs',
-        label: 'HTDemucs',
-        desc: 'Best overall stem quality across genres.',
-        quality: 4, speed: 2,
-        stems: ['Vocals', 'Drums', 'Bass', 'Other'],
-    },
-    {
-        tier: 'basic',
-        value: 'htdemucs_ft',
-        label: 'HTDemucs Fine-tuned',
-        desc: 'Extra clean on modern pop & EDM.',
-        quality: 4, speed: 2,
-        stems: ['Vocals', 'Drums', 'Bass', 'Other'],
-    },
-    {
-        tier: 'pro',
-        value: 'htdemucs_6s',
-        label: 'HTDemucs 6-stem',
-        desc: 'Adds guitar + piano isolation.',
-        quality: 3, speed: 1,
-        stems: ['Vocals', 'Drums', 'Bass', 'Guitar', 'Piano', 'Other'],
-    },
-    {
-        tier: 'pro',
-        value: 'htdemucs_hybrid',
-        label: 'HTDemucs Hybrid',
-        desc: 'Highest fidelity. Studio-grade output.',
-        quality: 3, speed: 1,
-        stems: ['Vocals', 'Drums', 'Bass', 'Guitar', 'Piano', 'Other'],
-    },
-];
-
-const TIER_LABELS = {
-    free:  { text: 'FREE',  color: '#aaa' },
-    basic: { text: 'BASIC', color: '#60a5fa' },
-    pro:   { text: 'PRO',   color: '#a3e635' },
+const TIER_META = {
+    free:   { label: 'FREE',   color: '#6b7280' },
+    basic:  { label: 'BASIC',  color: '#2563eb' },
+    pro:    { label: 'PRO',    color: '#16a34a' },
+    studio: { label: 'STUDIO', color: '#7c3aed' },
 };
 
-const TASK_GROUPS = [
-    { label: 'Music',   icon: Settings, category: 'music',  defaultModel: 'mdx_extra_q' },
-    { label: 'Speech',  icon: Mic2,     category: 'speech', defaultModel: 'htdemucs' },
-    { label: 'Noise',   icon: Volume2,  category: 'noise',  defaultModel: 'denoiser' },
-    { label: 'Wind',    icon: Wind,     category: 'wind',   defaultModel: 'denoiser_dns64' },
+// ── Task definitions ───────────────────────────────────────────────────────────
+const TASKS = [
+    { label: 'Separate Stems', icon: Music2, category: 'music' },
+    { label: 'Isolate Speech', icon: Mic2,   category: 'speech' },
+    { label: 'Denoise',        icon: Volume2, category: 'noise' },
 ];
 
-function Dots({ filled, total = 4, activeColor = '#f59e0b' }) {
+// ── Model catalogue ────────────────────────────────────────────────────────────
+const MODELS = {
+    music: [
+        {
+            tier: 'free', value: 'mdx_extra_q',
+            label: 'MDX-Net Q',
+            desc: 'Fast & solid. Good for quick previews.',
+            quality: 2, speed: 4,
+            stems: ['Vocals', 'Drums', 'Bass', 'Other'],
+        },
+        {
+            tier: 'free', value: 'mdx_extra',
+            label: 'Demucs v3',
+            desc: 'Balanced quality. Works on all genres.',
+            quality: 3, speed: 3,
+            stems: ['Vocals', 'Drums', 'Bass', 'Other'],
+        },
+        {
+            tier: 'basic', value: 'htdemucs',
+            label: 'HTDemucs',
+            desc: 'Best overall stem quality across genres.',
+            quality: 4, speed: 2,
+            stems: ['Vocals', 'Drums', 'Bass', 'Other'],
+        },
+        {
+            tier: 'basic', value: 'htdemucs_ft',
+            label: 'HTDemucs Fine-tuned',
+            desc: 'Extra clean on modern pop & EDM.',
+            quality: 4, speed: 2,
+            stems: ['Vocals', 'Drums', 'Bass', 'Other'],
+        },
+        {
+            tier: 'pro', value: 'htdemucs_6s',
+            label: 'HTDemucs 6-stem',
+            desc: 'Adds guitar + piano isolation.',
+            quality: 4, speed: 1,
+            stems: ['Vocals', 'Drums', 'Bass', 'Guitar', 'Piano', 'Other'],
+        },
+        {
+            tier: 'studio', value: 'htdemucs_hybrid',
+            label: 'HTDemucs Hybrid',
+            desc: 'Highest fidelity. Studio-grade output.',
+            quality: 5, speed: 1,
+            stems: ['Vocals', 'Drums', 'Bass', 'Guitar', 'Piano', 'Other'],
+        },
+    ],
+    speech: [
+        {
+            tier: 'free', value: 'mdx_extra_q',
+            label: 'Quick Voice Lift',
+            desc: 'Fast vocal vs. background separation.',
+            quality: 2, speed: 4,
+            stems: ['Vocals', 'No Vocals'],
+        },
+        {
+            tier: 'basic', value: 'htdemucs',
+            label: 'HTDemucs Voice',
+            desc: 'Clean vocal isolation for podcasts & calls.',
+            quality: 4, speed: 2,
+            stems: ['Vocals', 'No Vocals'],
+        },
+        {
+            tier: 'pro', value: 'htdemucs_ft',
+            label: 'Fine-tuned Voice',
+            desc: 'Cleanest isolation, minimal bleed.',
+            quality: 5, speed: 1,
+            stems: ['Vocals', 'No Vocals'],
+        },
+    ],
+    noise: [
+        {
+            tier: 'free', value: 'denoiser',
+            label: 'Environment Denoiser',
+            desc: 'Remove hiss, hum, and room noise.',
+            quality: 3, speed: 4,
+            stems: ['Enhanced'],
+        },
+        {
+            tier: 'pro', value: 'denoiser_dns64',
+            label: 'DNS64 Denoiser',
+            desc: 'Aggressive noise removal for tough recordings.',
+            quality: 5, speed: 2,
+            stems: ['Enhanced'],
+        },
+    ],
+};
+
+// ── Sub-components ─────────────────────────────────────────────────────────────
+function Dots({ filled, total = 5, activeColor = '#0a0a0a' }) {
     return (
         <span style={{ display: 'inline-flex', gap: '3px', alignItems: 'center' }}>
             {Array.from({ length: total }).map((_, i) => (
                 <span key={i} style={{
-                    width: 8, height: 8, borderRadius: '50%',
-                    background: i < filled ? activeColor : 'rgba(255,255,255,0.15)',
+                    width: 7, height: 7, borderRadius: '50%',
+                    background: i < filled ? activeColor : '#e5e7eb',
                     display: 'inline-block',
                 }} />
             ))}
@@ -95,14 +134,16 @@ function Dots({ filled, total = 4, activeColor = '#f59e0b' }) {
 function StemBadge({ label }) {
     return (
         <span style={{
-            padding: '2px 8px', borderRadius: '999px',
-            border: '1px solid rgba(255,255,255,0.18)',
-            fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)',
-            background: 'rgba(255,255,255,0.07)',
+            padding: '2px 7px', borderRadius: '999px',
+            border: '1px solid #e5e7eb',
+            fontSize: '0.68rem', color: '#555',
+            background: '#f9f9f9',
+            fontWeight: '500',
         }}>{label}</span>
     );
 }
 
+// ── Main component ─────────────────────────────────────────────────────────────
 export default function ConfigSection({
     model, setModel, category, setCategory,
     vocalOnly, setVocalOnly, trimStart, setTrimStart, trimEnd, setTrimEnd,
@@ -111,10 +152,15 @@ export default function ConfigSection({
     const [trimEnabled, setTrimEnabled] = React.useState(false);
     const userTier = planToTier(plan);
 
-    const handleTaskChange = (group) => {
-        setCategory(group.category);
-        setModel(group.defaultModel);
-        if (group.category !== 'music') setVocalOnly(false);
+    const handleTaskChange = (task) => {
+        setCategory(task.category);
+        // Default to first accessible model for this task
+        const taskModels = MODELS[task.category] || [];
+        const firstAccessible = taskModels.find(
+            m => TIER_ORDER[userTier] >= TIER_ORDER[m.tier]
+        ) || taskModels[0];
+        setModel(firstAccessible.value);
+        if (task.category !== 'music') setVocalOnly(false);
     };
 
     const handleTrimToggle = () => {
@@ -123,184 +169,167 @@ export default function ConfigSection({
         if (!next) { setTrimStart(0); setTrimEnd(0); }
     };
 
-    // Group music models by tier for rendering with tier headers
-    const tierGroups = [
-        { tier: 'free',  models: MUSIC_MODELS.filter(m => m.tier === 'free') },
-        { tier: 'basic', models: MUSIC_MODELS.filter(m => m.tier === 'basic') },
-        { tier: 'pro',   models: MUSIC_MODELS.filter(m => m.tier === 'pro') },
-    ];
+    const taskModels = MODELS[category] || [];
+
+    // Group by tier
+    const tierGroups = ['free', 'basic', 'pro', 'studio']
+        .map(tier => ({ tier, models: taskModels.filter(m => m.tier === tier) }))
+        .filter(g => g.models.length > 0);
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            style={{
-                background: '#141414', border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '16px', padding: '1.5rem',
-            }}
-        >
-            {/* Task tabs */}
+        <div style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: '16px', padding: '1.5rem' }}>
+
+            {/* Task selector */}
             <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ fontSize: '0.72rem', fontWeight: '700', color: '#666', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>TASK</div>
+                <div style={{ fontSize: '0.72rem', fontWeight: '700', color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>Task</div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {TASK_GROUPS.map(g => {
-                        const Icon = g.icon;
-                        const active = g.category === category;
+                    {TASKS.map(task => {
+                        const Icon = task.icon;
+                        const active = task.category === category;
                         return (
-                            <button key={g.category} onClick={() => handleTaskChange(g)} style={{
-                                display: 'flex', alignItems: 'center', gap: '0.4rem',
-                                padding: '0.4rem 0.9rem', borderRadius: '8px', cursor: 'pointer',
-                                border: active ? '1.5px solid rgba(255,255,255,0.8)' : '1.5px solid rgba(255,255,255,0.12)',
-                                background: active ? 'rgba(255,255,255,0.1)' : 'transparent',
-                                color: active ? '#fff' : '#666',
-                                fontSize: '0.82rem', fontWeight: '600', transition: 'all 0.18s',
-                            }}>
-                                <Icon size={13} />{g.label}
+                            <button
+                                key={task.category}
+                                onClick={() => handleTaskChange(task)}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.4rem',
+                                    padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer',
+                                    border: active ? '1.5px solid #111' : '1.5px solid #e5e7eb',
+                                    background: active ? '#111' : '#fff',
+                                    color: active ? '#fff' : '#555',
+                                    fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.15s',
+                                }}
+                            >
+                                <Icon size={14} />{task.label}
                             </button>
                         );
                     })}
                 </div>
             </div>
 
-            {/* Model grid — only shown for music category */}
-            {category === 'music' && (
-                <div style={{ marginBottom: '1.25rem' }}>
-                    <div style={{ fontSize: '0.72rem', fontWeight: '700', color: '#666', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>MODEL</div>
+            {/* Model grid */}
+            <div style={{ marginBottom: category === 'music' ? '1.25rem' : '0' }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: '700', color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>Model</div>
 
-                    {tierGroups.map(({ tier, models }) => {
-                        const tl = TIER_LABELS[tier];
-                        const accessible = TIER_ORDER[userTier] >= TIER_ORDER[tier];
-                        return (
-                            <div key={tier} style={{ marginBottom: '1rem' }}>
-                                {/* Tier header */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
-                                    <span style={{ fontSize: '0.68rem', fontWeight: '800', letterSpacing: '0.1em', color: tl.color }}>{tl.text}</span>
-                                    <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.06)' }} />
-                                </div>
-
-                                {/* Model cards — 2 per row */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                                    {models.map(m => {
-                                        const selected = m.value === model;
-                                        const locked = !accessible;
-                                        return (
-                                            <button
-                                                key={m.value}
-                                                onClick={() => !locked && setModel(m.value)}
-                                                disabled={locked}
-                                                style={{
-                                                    position: 'relative', textAlign: 'left',
-                                                    padding: '0.85rem 0.9rem',
-                                                    borderRadius: '12px',
-                                                    border: selected
-                                                        ? '1.5px solid rgba(255,255,255,0.7)'
-                                                        : '1.5px solid rgba(255,255,255,0.08)',
-                                                    background: selected
-                                                        ? 'rgba(255,255,255,0.09)'
-                                                        : 'rgba(255,255,255,0.03)',
-                                                    cursor: locked ? 'not-allowed' : 'pointer',
-                                                    opacity: locked ? 0.45 : 1,
-                                                    transition: 'all 0.18s',
-                                                }}
-                                            >
-                                                {/* Selected checkmark */}
-                                                {selected && (
-                                                    <div style={{
-                                                        position: 'absolute', top: '0.6rem', right: '0.6rem',
-                                                        width: 18, height: 18, borderRadius: '50%',
-                                                        background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    }}>
-                                                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                                                            <path d="M2 5l2.5 2.5L8 3" stroke="#111" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                                        </svg>
-                                                    </div>
-                                                )}
-
-                                                {/* Lock icon */}
-                                                {locked && (
-                                                    <div style={{ position: 'absolute', top: '0.6rem', right: '0.6rem' }}>
-                                                        <Lock size={13} color="#666" />
-                                                    </div>
-                                                )}
-
-                                                <div style={{ fontWeight: '700', fontSize: '0.85rem', color: '#fff', marginBottom: '2px', paddingRight: '1.2rem' }}>
-                                                    {m.label}
-                                                </div>
-                                                <div style={{ fontSize: '0.72rem', color: '#888', marginBottom: '0.55rem', lineHeight: 1.3 }}>
-                                                    {m.desc}
-                                                </div>
-
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginBottom: '0.55rem' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                        <span style={{ fontSize: '0.65rem', color: '#555', width: '36px' }}>Quality</span>
-                                                        <Dots filled={m.quality} activeColor="rgba(255,255,255,0.75)" />
-                                                    </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                        <span style={{ fontSize: '0.65rem', color: '#555', width: '36px' }}>Speed</span>
-                                                        <Dots filled={m.speed} activeColor="#f59e0b" />
-                                                    </div>
-                                                </div>
-
-                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
-                                                    {m.stems.map(s => <StemBadge key={s} label={s} />)}
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                {tierGroups.map(({ tier, models }) => {
+                    const tm = TIER_META[tier];
+                    const accessible = TIER_ORDER[userTier] >= TIER_ORDER[tier];
+                    return (
+                        <div key={tier} style={{ marginBottom: '1rem' }}>
+                            {/* Tier header */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.45rem' }}>
+                                <span style={{ fontSize: '0.65rem', fontWeight: '800', letterSpacing: '0.1em', color: tm.color }}>{tm.label}</span>
+                                <div style={{ flex: 1, height: '1px', background: '#f0f0f0' }} />
                             </div>
-                        );
-                    })}
 
-                    {/* Upgrade nudge when free user */}
-                    {userTier === 'free' && (
-                        <a href="/pricing" style={{
-                            display: 'block', marginTop: '0.25rem', textAlign: 'center',
-                            fontSize: '0.75rem', color: '#555', textDecoration: 'none',
-                            padding: '0.4rem', transition: 'color 0.2s',
-                        }}>
-                            ↑ Upgrade to unlock Basic & Pro models
-                        </a>
-                    )}
-                </div>
-            )}
+                            {/* Cards */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem' }}>
+                                {models.map(m => {
+                                    const selected = m.value === model;
+                                    const locked = !accessible;
+                                    return (
+                                        <button
+                                            key={m.value}
+                                            onClick={() => !locked && setModel(m.value)}
+                                            disabled={locked}
+                                            style={{
+                                                position: 'relative', textAlign: 'left',
+                                                padding: '0.85rem 0.9rem', borderRadius: '12px',
+                                                border: selected ? '1.5px solid #111' : '1.5px solid #ebebeb',
+                                                background: selected ? '#f8f8f8' : '#fff',
+                                                cursor: locked ? 'not-allowed' : 'pointer',
+                                                opacity: locked ? 0.5 : 1,
+                                                transition: 'all 0.15s',
+                                            }}
+                                        >
+                                            {/* Checkmark */}
+                                            {selected && (
+                                                <div style={{
+                                                    position: 'absolute', top: '0.6rem', right: '0.6rem',
+                                                    width: 18, height: 18, borderRadius: '50%',
+                                                    background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                }}>
+                                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                                                        <path d="M2 5l2.5 2.5L8 3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </svg>
+                                                </div>
+                                            )}
+                                            {/* Lock */}
+                                            {locked && (
+                                                <div style={{ position: 'absolute', top: '0.6rem', right: '0.6rem' }}>
+                                                    <Lock size={13} color="#bbb" />
+                                                </div>
+                                            )}
 
-            {/* For non-music tasks, keep a compact model label */}
-            {category !== 'music' && (
-                <div style={{ marginBottom: '1.25rem', padding: '0.75rem 1rem', borderRadius: '10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div style={{ fontSize: '0.82rem', color: '#aaa', fontWeight: '600' }}>
-                        {category === 'speech' ? 'Voice Isolation' : category === 'noise' ? 'Environment Denoiser' : 'DNS64 Wind Cleaner'}
-                    </div>
-                    <div style={{ fontSize: '0.73rem', color: '#555', marginTop: '2px' }}>
-                        {category === 'speech' ? 'Clean vocal vs. background split' : category === 'noise' ? 'Remove hiss, hum, room noise' : 'Aggressively removes wind artefacts'}
-                    </div>
-                </div>
-            )}
+                                            <div style={{ fontWeight: '700', fontSize: '0.85rem', color: '#0a0a0a', marginBottom: '2px', paddingRight: '1.4rem' }}>
+                                                {m.label}
+                                            </div>
+                                            <div style={{ fontSize: '0.72rem', color: '#888', marginBottom: '0.5rem', lineHeight: 1.35 }}>
+                                                {m.desc}
+                                            </div>
 
-            {/* Vocal Only toggle */}
-            {category === 'music' && (
-                <div style={{ marginBottom: '1rem' }}>
-                    <div onClick={() => setVocalOnly(!vocalOnly)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '0.5rem 0' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Mic2 size={15} color={vocalOnly ? '#fff' : '#555'} />
-                            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: vocalOnly ? '#fff' : '#666' }}>Vocals Only (faster)</span>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginBottom: '0.5rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <span style={{ fontSize: '0.63rem', color: '#aaa', width: '38px' }}>Quality</span>
+                                                    <Dots filled={m.quality} activeColor="#0a0a0a" />
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <span style={{ fontSize: '0.63rem', color: '#aaa', width: '38px' }}>Speed</span>
+                                                    <Dots filled={m.speed} activeColor="#f59e0b" />
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
+                                                {m.stems.map(s => <StemBadge key={s} label={s} />)}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
-                        <div style={{ width: '36px', height: '20px', borderRadius: '10px', background: vocalOnly ? '#fff' : 'rgba(255,255,255,0.1)', position: 'relative', transition: 'all 0.3s', flexShrink: 0 }}>
-                            <motion.div layout style={{ position: 'absolute', width: '16px', height: '16px', borderRadius: '50%', background: vocalOnly ? '#111' : '#555', top: '2px', left: vocalOnly ? '18px' : '2px' }} />
+                    );
+                })}
+
+                {/* Upgrade nudge */}
+                {userTier !== 'studio' && (
+                    <a href="/pricing" style={{
+                        display: 'block', marginTop: '0.25rem', textAlign: 'center',
+                        fontSize: '0.75rem', color: '#bbb', textDecoration: 'none', padding: '0.3rem',
+                    }}>
+                        ↑ Upgrade to unlock more models
+                    </a>
+                )}
+            </div>
+
+            {/* Vocal Only toggle — only for music */}
+            {category === 'music' && (
+                <div style={{ borderTop: '1px solid #f5f5f5', paddingTop: '1rem', marginBottom: '0.75rem' }}>
+                    <div
+                        onClick={() => setVocalOnly(!vocalOnly)}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '0.3rem 0' }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Mic2 size={15} color={vocalOnly ? '#111' : '#aaa'} />
+                            <span style={{ fontSize: '0.87rem', fontWeight: '600', color: vocalOnly ? '#0a0a0a' : '#888' }}>Vocals Only (faster)</span>
+                        </div>
+                        <div style={{ width: '38px', height: '21px', borderRadius: '11px', background: vocalOnly ? '#111' : '#e5e7eb', position: 'relative', transition: 'all 0.3s', flexShrink: 0 }}>
+                            <motion.div layout style={{ position: 'absolute', width: '17px', height: '17px', borderRadius: '50%', background: '#fff', top: '2px', left: vocalOnly ? '19px' : '2px', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }} />
                         </div>
                     </div>
                 </div>
             )}
 
             {/* Trim toggle */}
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.85rem' }}>
-                <div onClick={handleTrimToggle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '0.3rem 0' }}>
+            <div style={{ borderTop: '1px solid #f5f5f5', paddingTop: '0.85rem' }}>
+                <div
+                    onClick={handleTrimToggle}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '0.3rem 0' }}
+                >
                     <div>
-                        <span style={{ fontSize: '0.85rem', fontWeight: '600', color: trimEnabled ? '#fff' : '#666' }}>✂️  Trim Audio</span>
-                        <span style={{ fontSize: '0.73rem', color: '#444', marginLeft: '0.5rem' }}>select a section to process</span>
+                        <span style={{ fontSize: '0.87rem', fontWeight: '600', color: trimEnabled ? '#0a0a0a' : '#888' }}>✂️  Trim Audio</span>
+                        <span style={{ fontSize: '0.73rem', color: '#bbb', marginLeft: '0.5rem' }}>select a section to process</span>
                     </div>
-                    <div style={{ width: '36px', height: '20px', borderRadius: '10px', background: trimEnabled ? '#fff' : 'rgba(255,255,255,0.1)', position: 'relative', transition: 'background 0.3s', flexShrink: 0 }}>
-                        <motion.div layout style={{ position: 'absolute', width: '16px', height: '16px', borderRadius: '50%', background: trimEnabled ? '#111' : '#555', top: '2px', left: trimEnabled ? '18px' : '2px' }} />
+                    <div style={{ width: '38px', height: '21px', borderRadius: '11px', background: trimEnabled ? '#111' : '#e5e7eb', position: 'relative', transition: 'background 0.3s', flexShrink: 0 }}>
+                        <motion.div layout style={{ position: 'absolute', width: '17px', height: '17px', borderRadius: '50%', background: '#fff', top: '2px', left: trimEnabled ? '19px' : '2px', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }} />
                     </div>
                 </div>
                 {trimEnabled && (
@@ -309,6 +338,6 @@ export default function ConfigSection({
                     </motion.div>
                 )}
             </div>
-        </motion.div>
+        </div>
     );
 }
