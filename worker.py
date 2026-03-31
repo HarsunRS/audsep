@@ -109,7 +109,7 @@ def run_cancellable(cmd, job_id, timeout=JOB_TIMEOUT):
     Kills the subprocess immediately if cancellation is detected.
     Returns 'cancelled' | 'done'. Raises on non-zero exit or timeout.
     """
-    proc = subprocess.Popen(cmd)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     start = time.time()
     while proc.poll() is None:
         elapsed = time.time() - start
@@ -127,7 +127,11 @@ def run_cancellable(cmd, job_id, timeout=JOB_TIMEOUT):
             pass  # DB hiccup — keep going
         time.sleep(5)
     if proc.returncode != 0:
-        raise subprocess.CalledProcessError(proc.returncode, cmd)
+        stderr_out = proc.stderr.read().decode(errors='replace') if proc.stderr else ''
+        print(f"[worker] Demucs stderr:\n{stderr_out}")
+        err = subprocess.CalledProcessError(proc.returncode, cmd)
+        err.stderr = stderr_out
+        raise err
     return "done"
 
 
@@ -302,8 +306,10 @@ def process_job(job):
         sb_patch("jobs", {"status": "failed", "error": msg}, {"id": job_id})
 
     except Exception as e:
-        print(f"[worker] Job {job_id} failed: {e}")
-        sb_patch("jobs", {"status": "failed", "error": str(e)}, {"id": job_id})
+        detail = getattr(e, 'stderr', '') or ''
+        msg = str(e) + (f"\n{detail.strip()}" if detail.strip() else '')
+        print(f"[worker] Job {job_id} failed: {msg}")
+        sb_patch("jobs", {"status": "failed", "error": msg[:500]}, {"id": job_id})
 
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
