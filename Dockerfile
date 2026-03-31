@@ -20,14 +20,16 @@ RUN .venv/bin/pip install --no-cache-dir -r requirements.txt
 #   free:  mdx_extra_q, mdx_extra
 #   basic: htdemucs, htdemucs_ft
 #   pro:   htdemucs_6s  (htdemucs_hybrid reuses htdemucs weights)
-RUN .venv/bin/python -c "\
-from demucs.pretrained import get_model; \
-get_model('mdx_extra_q'); \
-get_model('mdx_extra'); \
-get_model('htdemucs'); \
-get_model('htdemucs_ft'); \
-get_model('htdemucs_6s'); \
-print('All models downloaded.')"
+RUN .venv/bin/python - <<'EOF'
+from demucs.pretrained import get_model
+for m in ['mdx_extra_q', 'mdx_extra', 'htdemucs', 'htdemucs_ft', 'htdemucs_6s']:
+    try:
+        get_model(m)
+        print(f'Downloaded {m}')
+    except Exception as e:
+        print(f'WARN: could not download {m}: {e}')
+print('Model pre-download complete.')
+EOF
 
 # Copy the rest of the app into the container
 COPY . .
