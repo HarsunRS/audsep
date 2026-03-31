@@ -23,11 +23,15 @@ APP_URL              = os.environ.get("NEXT_PUBLIC_APP_URL", "http://localhost:3
 POLL_INTERVAL        = 5   # seconds between polls when queue is empty
 JOB_TIMEOUT          = 600 # 10 minutes hard limit per job
 
-# Use all available CPU cores for PyTorch/OpenMP — biggest single speedup
+# Use all available CPU cores for PyTorch/OpenMP thread pools — helps inference speed.
 CPU_CORES = str(os.cpu_count() or 4)
-os.environ.setdefault("OMP_NUM_THREADS",   CPU_CORES)
-os.environ.setdefault("MKL_NUM_THREADS",   CPU_CORES)
+os.environ.setdefault("OMP_NUM_THREADS",      CPU_CORES)
+os.environ.setdefault("MKL_NUM_THREADS",      CPU_CORES)
 os.environ.setdefault("OPENBLAS_NUM_THREADS", CPU_CORES)
+
+# Cap parallel Demucs stem jobs at 2. --jobs N loads the full model N times in RAM
+# simultaneously; on Railway (48 vCPUs but limited RAM) higher values cause SIGKILL.
+DEMUCS_JOBS = "2"
 
 VENV_BIN = pathlib.Path(__file__).parent / ".venv" / "bin"
 
@@ -167,7 +171,7 @@ def process_job(job):
                 "-n", model,
                 "-o", out_dir,
                 # Process all stems in parallel threads — biggest speedup on CPU
-                "--jobs", CPU_CORES,
+                "--jobs", DEMUCS_JOBS,
                 # Reduce overlap between segments (0.1 vs default 0.25)
                 # Faster with negligible quality difference for most music
                 "--overlap", "0.1",
