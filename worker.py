@@ -149,6 +149,19 @@ def process_job(job):
 
     print(f"[worker] Processing job {job_id} — model={model}, category={category}")
 
+    # ── Look up user plan for feature enforcement ──────────────────────────────
+    plan_rows = sb_get("users", f"id=eq.{user_id}&select=plan")
+    user_plan = plan_rows[0].get("plan", "free") if plan_rows else "free"
+
+    # Duration limits per plan: free=5 min, basic=10 min, pro+=30 min
+    def _plan_duration_limit(p):
+        if not p or p == "free":            return 300
+        if p.startswith("basic"):           return 600
+        return 1800  # pro, studio, team
+
+    max_duration = _plan_duration_limit(user_plan)
+    free_plan    = (not user_plan or user_plan == "free")
+
     sb_patch("jobs", {"status": "processing"}, {"id": job_id})
 
     tmpdir = tempfile.mkdtemp(prefix="audsep-")
@@ -161,13 +174,26 @@ def process_job(job):
             f.write(audio_data)
 
         # ── Pre-convert to 44100 Hz stereo WAV ───────────────────────────────
-        # Demucs natively works at 44100 Hz stereo WAV — pre-converting avoids
-        # internal decoding overhead and makes processing significantly faster.
         wav_path = os.path.join(tmpdir, "input.wav")
         subprocess.run(
             ["ffmpeg", "-i", raw_path, "-ar", "44100", "-ac", "2", "-y", wav_path],
             check=True, capture_output=True, timeout=120,
         )
+
+        # ── Enforce duration limit ────────────────────────────────────────────
+        dur_result = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "csv=p=0", wav_path],
+            capture_output=True, text=True, timeout=30,
+        )
+        audio_duration = float((dur_result.stdout.strip() or "0").split("\n")[0])
+        if audio_duration > max_duration:
+            limit_str = f"{max_duration // 60} min"
+            raise ValueError(
+                f"Audio is {int(audio_duration // 60)}m {int(audio_duration % 60)}s. "
+                f"Your {user_plan or 'free'} plan supports up to {limit_str}. "
+                f"Upgrade for longer files."
+            )
 
         output_paths = {}
 
@@ -193,9 +219,19 @@ def process_job(job):
 
             base         = pathlib.Path(mono_wav).stem
             enhanced_src = os.path.join(enhanced_dir, f"{base}_enhanced.wav")
-            storage_path = f"{user_id}/{job_id}/enhanced.wav"
-            with open(enhanced_src, "rb") as f:
-                sb_upload("outputs", storage_path, f.read())
+            if free_plan:
+                mp3_path = os.path.join(enhanced_dir, "enhanced.mp3")
+                subprocess.run(
+                    ["ffmpeg", "-i", enhanced_src, "-b:a", "192k", "-y", mp3_path],
+                    check=True, capture_output=True, timeout=120,
+                )
+                storage_path = f"{user_id}/{job_id}/enhanced.mp3"
+                with open(mp3_path, "rb") as f:
+                    sb_upload("outputs", storage_path, f.read(), "audio/mpeg")
+            else:
+                storage_path = f"{user_id}/{job_id}/enhanced.wav"
+                with open(enhanced_src, "rb") as f:
+                    sb_upload("outputs", storage_path, f.read())
             output_paths["enhanced"] = storage_path
 
         else:
@@ -223,11 +259,25 @@ def process_job(job):
             base      = pathlib.Path(wav_path).stem  # "input"
             model_out = os.path.join(out_dir, model, base)
             for f_name in os.listdir(model_out):
-                stem         = pathlib.Path(f_name).stem
-                src          = os.path.join(model_out, f_name)
-                storage_path = f"{user_id}/{job_id}/{f_name}"
-                with open(src, "rb") as f:
-                    sb_upload("outputs", storage_path, f.read())
+                stem = pathlib.Path(f_name).stem
+                src  = os.path.join(model_out, f_name)
+
+                if free_plan:
+                    # Free tier: convert output to MP3 (192kbps) before uploading
+                    mp3_name = f"{stem}.mp3"
+                    mp3_path = os.path.join(model_out, mp3_name)
+                    subprocess.run(
+                        ["ffmpeg", "-i", src, "-b:a", "192k", "-y", mp3_path],
+                        check=True, capture_output=True, timeout=120,
+                    )
+                    storage_path = f"{user_id}/{job_id}/{mp3_name}"
+                    with open(mp3_path, "rb") as f:
+                        sb_upload("outputs", storage_path, f.read(), "audio/mpeg")
+                else:
+                    storage_path = f"{user_id}/{job_id}/{f_name}"
+                    with open(src, "rb") as f:
+                        sb_upload("outputs", storage_path, f.read())
+
                 output_paths[stem] = storage_path
 
         # ── Mark done ─────────────────────────────────────────────────────────

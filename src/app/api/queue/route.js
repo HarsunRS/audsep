@@ -6,25 +6,27 @@ import { createServerClient } from '../../../../lib/supabase';
 const ALLOWED_CATEGORIES = ['music', 'speech', 'noise', 'wind'];
 
 // Each model maps to the minimum tier required to use it.
-// Free and basic share the same models — only usage limits differ.
-// Pro unlocks 6-stem, studio unlocks hybrid.
+// 3-tier model gating matching the pricing page:
+//   free:  mdx_extra_q, denoiser
+//   basic: mdx_extra, htdemucs  (+free)
+//   pro:   htdemucs_ft, htdemucs_6s, htdemucs_hybrid, denoiser_dns64  (+basic+free)
 const MODEL_TIERS = {
     'mdx_extra_q':     'free',
-    'mdx_extra':       'free',
-    'htdemucs':        'free',
-    'htdemucs_ft':     'free',
+    'mdx_extra':       'basic',
+    'htdemucs':        'basic',
+    'htdemucs_ft':     'pro',
     'htdemucs_6s':     'pro',
-    'htdemucs_hybrid': 'studio',
+    'htdemucs_hybrid': 'pro',
     'denoiser':        'free',
     'denoiser_dns64':  'pro',
 };
 const ALLOWED_MODELS = Object.keys(MODEL_TIERS);
-const TIER_ORDER = { free: 0, pro: 1, studio: 2 };
+const TIER_ORDER = { free: 0, basic: 1, pro: 2 };
 
 function planToTier(plan) {
-    if (!plan || plan === 'free' || plan.startsWith('basic')) return 'free';
-    if (plan.startsWith('studio') || plan === 'team') return 'studio';
-    return 'pro';
+    if (!plan || plan === 'free') return 'free';
+    if (plan.startsWith('basic')) return 'basic';
+    return 'pro'; // pro-monthly, pro-yearly, studio, team
 }
 
 // Comma-separated Clerk user IDs that bypass usage limits (e.g. for testing).

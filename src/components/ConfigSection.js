@@ -6,49 +6,122 @@ import { Music2, Mic2, Volume2, Lock } from 'lucide-react';
 import TrimSlider from './TrimSlider';
 
 // ── Tier helpers ───────────────────────────────────────────────────────────────
-const TIER_ORDER = { free: 0, basic: 1, pro: 2, studio: 3 };
+const TIER_ORDER = { free: 0, basic: 1, pro: 2 };
 
 function planToTier(plan) {
     if (!plan || plan === 'free') return 'free';
-    // Basic has same model access as free — only usage limits differ
-    if (plan.startsWith('basic')) return 'free';
-    if (plan.startsWith('studio') || plan === 'team') return 'studio';
-    return 'pro';
+    if (plan.startsWith('basic')) return 'basic';
+    return 'pro'; // pro-monthly, pro-yearly, studio, team
 }
 
 const TIER_META = {
-    free:   { label: 'FREE & BASIC', color: '#6b7280' },
-    pro:    { label: 'PRO',          color: '#16a34a' },
-    studio: { label: 'STUDIO',       color: '#7c3aed' },
+    free:  { label: 'FREE',  color: '#6b7280' },
+    basic: { label: 'BASIC', color: '#2563eb' },
+    pro:   { label: 'PRO',   color: '#7c3aed' },
 };
 
-// ── Task definitions ───────────────────────────────────────────────────────────
+// ── Tasks ─────────────────────────────────────────────────────────────────────
 const TASKS = [
-    { label: 'Separate Stems', icon: Music2, category: 'music' },
-    { label: 'Isolate Speech', icon: Mic2,   category: 'speech' },
-    { label: 'Denoise',        icon: Volume2, category: 'noise' },
+    { label: 'Separate Stems', icon: Music2,  category: 'music'  },
+    { label: 'Isolate Speech', icon: Mic2,    category: 'speech' },
+    { label: 'Denoise',        icon: Volume2, category: 'noise'  },
 ];
 
-// ── Model catalogue ────────────────────────────────────────────────────────────
-// Free and Basic have the same models — difference is only usage limits (enforced by the DB).
-// Cards show "FREE & BASIC" header so users understand both tiers get access.
+// ── Model catalogue (exact tiers from the pricing image) ──────────────────────
 const MODELS = {
     music: [
-        { tier: 'free', value: 'mdx_extra_q',    label: 'MDX-Net Q',            desc: 'Fast & solid. Good for quick previews.',        quality: 2, speed: 4, stems: ['Vocals', 'Drums', 'Bass', 'Other'] },
-        { tier: 'free', value: 'mdx_extra',       label: 'Demucs v3',            desc: 'Balanced quality. Works on all genres.',        quality: 3, speed: 3, stems: ['Vocals', 'Drums', 'Bass', 'Other'] },
-        { tier: 'free', value: 'htdemucs',         label: 'HTDemucs',             desc: 'Best overall stem quality across genres.',      quality: 4, speed: 2, stems: ['Vocals', 'Drums', 'Bass', 'Other'] },
-        { tier: 'free', value: 'htdemucs_ft',      label: 'HTDemucs Fine-tuned',  desc: 'Extra clean on modern pop & EDM.',              quality: 4, speed: 2, stems: ['Vocals', 'Drums', 'Bass', 'Other'] },
-        { tier: 'pro',  value: 'htdemucs_6s',      label: 'HTDemucs 6-stem',      desc: 'Adds guitar + piano isolation.',                quality: 4, speed: 1, stems: ['Vocals', 'Drums', 'Bass', 'Guitar', 'Piano', 'Other'] },
-        { tier: 'studio', value: 'htdemucs_hybrid',label: 'HTDemucs Hybrid',      desc: 'Highest fidelity. Studio-grade output.',        quality: 5, speed: 1, stems: ['Vocals', 'Drums', 'Bass', 'Guitar', 'Piano', 'Other'] },
+        {
+            tier: 'free',
+            value: 'mdx_extra_q',
+            label: 'MDX-Net Q',
+            desc: 'Fast preview model',
+            quality: 2, speed: 4,
+            stems: ['Vocals', 'Drums', 'Bass', 'Other'],
+        },
+        {
+            tier: 'basic',
+            value: 'mdx_extra',
+            label: 'Demucs v3',
+            desc: 'Balanced, all genres',
+            quality: 3, speed: 3,
+            stems: ['Vocals', 'Drums', 'Bass', 'Other'],
+        },
+        {
+            tier: 'basic',
+            value: 'htdemucs',
+            label: 'HTDemucs',
+            desc: 'Best overall quality',
+            quality: 4, speed: 2,
+            stems: ['Vocals', 'Drums', 'Bass', 'Other'],
+        },
+        {
+            tier: 'pro',
+            value: 'htdemucs_ft',
+            label: 'HTDemucs FT',
+            desc: 'Pop & EDM focused',
+            quality: 4, speed: 2,
+            stems: ['Vocals', 'Drums', 'Bass', 'Other'],
+        },
+        {
+            tier: 'pro',
+            value: 'htdemucs_6s',
+            label: 'HTDemucs 6-stem',
+            desc: '+ Guitar & Piano',
+            quality: 4, speed: 1,
+            stems: ['Vocals', 'Drums', 'Bass', 'Guitar', 'Piano', 'Other'],
+        },
+        {
+            tier: 'pro',
+            value: 'htdemucs_hybrid',
+            label: 'HTDemucs Hybrid',
+            desc: 'Studio-grade output',
+            quality: 5, speed: 1,
+            stems: ['Vocals', 'Drums', 'Bass', 'Guitar', 'Piano', 'Other'],
+        },
     ],
     speech: [
-        { tier: 'free', value: 'mdx_extra_q',    label: 'Quick Voice Lift',      desc: 'Fast vocal vs. background separation.',         quality: 2, speed: 4, stems: ['Vocals', 'Background'] },
-        { tier: 'free', value: 'htdemucs',         label: 'HTDemucs Voice',        desc: 'Clean vocal isolation for podcasts & calls.',   quality: 4, speed: 2, stems: ['Vocals', 'Background'] },
-        { tier: 'pro',  value: 'htdemucs_ft',      label: 'Fine-tuned Voice',      desc: 'Cleanest isolation, minimal bleed.',            quality: 5, speed: 1, stems: ['Vocals', 'Background'] },
+        {
+            tier: 'free',
+            value: 'mdx_extra_q',
+            label: 'Quick Voice Lift',
+            desc: 'Fast vocal separation',
+            quality: 2, speed: 4,
+            stems: ['Vocals', 'Background'],
+        },
+        {
+            tier: 'basic',
+            value: 'htdemucs',
+            label: 'HTDemucs Voice',
+            desc: 'Clean isolation, podcasts & calls',
+            quality: 4, speed: 2,
+            stems: ['Vocals', 'Background'],
+        },
+        {
+            tier: 'pro',
+            value: 'htdemucs_ft',
+            label: 'Fine-tuned Voice',
+            desc: 'Cleanest isolation, minimal bleed',
+            quality: 5, speed: 1,
+            stems: ['Vocals', 'Background'],
+        },
     ],
     noise: [
-        { tier: 'free', value: 'denoiser',         label: 'Environment Denoiser',  desc: 'Remove hiss, hum, and room noise.',             quality: 3, speed: 4, stems: ['Enhanced'] },
-        { tier: 'pro',  value: 'denoiser_dns64',   label: 'DNS64 Denoiser',        desc: 'Aggressive noise removal for tough recordings.', quality: 5, speed: 2, stems: ['Enhanced'] },
+        {
+            tier: 'free',
+            value: 'denoiser',
+            label: 'Environment Denoiser',
+            desc: 'Hiss, hum, room noise',
+            quality: 3, speed: 4,
+            stems: ['Enhanced'],
+        },
+        {
+            tier: 'pro',
+            value: 'denoiser_dns64',
+            label: 'DNS64 Denoiser',
+            desc: 'Aggressive noise removal',
+            quality: 5, speed: 2,
+            stems: ['Enhanced'],
+        },
     ],
 };
 
@@ -72,9 +145,7 @@ function StemBadge({ label }) {
         <span style={{
             padding: '2px 7px', borderRadius: '999px',
             border: '1px solid #e5e7eb',
-            fontSize: '0.68rem', color: '#555',
-            background: '#f9f9f9',
-            fontWeight: '500',
+            fontSize: '0.67rem', color: '#555', background: '#f9f9f9', fontWeight: '500',
         }}>{label}</span>
     );
 }
@@ -90,7 +161,6 @@ export default function ConfigSection({
 
     const handleTaskChange = (task) => {
         setCategory(task.category);
-        // Default to first accessible model for this task
         const taskModels = MODELS[task.category] || [];
         const firstAccessible = taskModels.find(
             m => TIER_ORDER[userTier] >= TIER_ORDER[m.tier]
@@ -106,9 +176,7 @@ export default function ConfigSection({
     };
 
     const taskModels = MODELS[category] || [];
-
-    // Group by tier — basic is merged into free (same models, different usage limits)
-    const tierGroups = ['free', 'pro', 'studio']
+    const tierGroups = ['free', 'basic', 'pro']
         .map(tier => ({ tier, models: taskModels.filter(m => m.tier === tier) }))
         .filter(g => g.models.length > 0);
 
@@ -123,19 +191,15 @@ export default function ConfigSection({
                         const Icon = task.icon;
                         const active = task.category === category;
                         return (
-                            <button
-                                key={task.category}
-                                onClick={() => handleTaskChange(task)}
-                                style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
-                                    padding: '0.55rem 1rem', borderRadius: '8px', cursor: 'pointer',
-                                    border: active ? '1.5px solid #111' : '1.5px solid #e5e7eb',
-                                    background: active ? '#111' : '#fff',
-                                    color: active ? '#fff' : '#555',
-                                    fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.15s',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
+                            <button key={task.category} onClick={() => handleTaskChange(task)} style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                                padding: '0.55rem 0.75rem', borderRadius: '8px', cursor: 'pointer',
+                                border: active ? '1.5px solid #111' : '1.5px solid #e5e7eb',
+                                background: active ? '#111' : '#fff',
+                                color: active ? '#fff' : '#555',
+                                fontSize: '0.83rem', fontWeight: '600', transition: 'all 0.15s',
+                                whiteSpace: 'nowrap',
+                            }}>
                                 <Icon size={14} />{task.label}
                             </button>
                         );
@@ -144,21 +208,21 @@ export default function ConfigSection({
             </div>
 
             {/* Model grid */}
-            <div style={{ marginBottom: category === 'music' ? '1.25rem' : '0' }}>
+            <div style={{ marginBottom: '1rem' }}>
                 <div style={{ fontSize: '0.72rem', fontWeight: '700', color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>Model</div>
 
                 {tierGroups.map(({ tier, models }) => {
                     const tm = TIER_META[tier];
                     const accessible = TIER_ORDER[userTier] >= TIER_ORDER[tier];
                     return (
-                        <div key={tier} style={{ marginBottom: '1rem' }}>
+                        <div key={tier} style={{ marginBottom: '0.9rem' }}>
                             {/* Tier header */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.45rem' }}>
                                 <span style={{ fontSize: '0.65rem', fontWeight: '800', letterSpacing: '0.1em', color: tm.color }}>{tm.label}</span>
                                 <div style={{ flex: 1, height: '1px', background: '#f0f0f0' }} />
                             </div>
 
-                            {/* Cards — 2 columns; last card spans full width if count is odd */}
+                            {/* Cards — 2 col; last card spans full if odd count */}
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                                 {models.map((m, idx) => {
                                     const selected = m.value === model;
@@ -175,37 +239,25 @@ export default function ConfigSection({
                                                 border: selected ? '1.5px solid #111' : '1.5px solid #ebebeb',
                                                 background: selected ? '#f8f8f8' : '#fff',
                                                 cursor: locked ? 'not-allowed' : 'pointer',
-                                                opacity: locked ? 0.5 : 1,
+                                                opacity: locked ? 0.45 : 1,
                                                 transition: 'all 0.15s',
                                                 gridColumn: isLastOdd ? 'span 2' : undefined,
                                             }}
                                         >
-                                            {/* Checkmark */}
                                             {selected && (
-                                                <div style={{
-                                                    position: 'absolute', top: '0.6rem', right: '0.6rem',
-                                                    width: 18, height: 18, borderRadius: '50%',
-                                                    background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                }}>
+                                                <div style={{ position: 'absolute', top: '0.6rem', right: '0.6rem', width: 18, height: 18, borderRadius: '50%', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                                                         <path d="M2 5l2.5 2.5L8 3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                                     </svg>
                                                 </div>
                                             )}
-                                            {/* Lock */}
                                             {locked && (
                                                 <div style={{ position: 'absolute', top: '0.6rem', right: '0.6rem' }}>
-                                                    <Lock size={13} color="#bbb" />
+                                                    <Lock size={13} color="#ccc" />
                                                 </div>
                                             )}
-
-                                            <div style={{ fontWeight: '700', fontSize: '0.85rem', color: '#0a0a0a', marginBottom: '2px', paddingRight: '1.4rem' }}>
-                                                {m.label}
-                                            </div>
-                                            <div style={{ fontSize: '0.72rem', color: '#888', marginBottom: '0.5rem', lineHeight: 1.35 }}>
-                                                {m.desc}
-                                            </div>
-
+                                            <div style={{ fontWeight: '700', fontSize: '0.85rem', color: '#0a0a0a', marginBottom: '2px', paddingRight: '1.4rem' }}>{m.label}</div>
+                                            <div style={{ fontSize: '0.72rem', color: '#888', marginBottom: '0.5rem', lineHeight: 1.35 }}>{m.desc}</div>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginBottom: '0.5rem' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                     <span style={{ fontSize: '0.63rem', color: '#aaa', width: '38px' }}>Quality</span>
@@ -216,7 +268,6 @@ export default function ConfigSection({
                                                     <Dots filled={m.speed} activeColor="#f59e0b" />
                                                 </div>
                                             </div>
-
                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
                                                 {m.stems.map(s => <StemBadge key={s} label={s} />)}
                                             </div>
@@ -228,24 +279,17 @@ export default function ConfigSection({
                     );
                 })}
 
-                {/* Upgrade nudge */}
-                {userTier !== 'studio' && (
-                    <a href="/pricing" style={{
-                        display: 'block', marginTop: '0.25rem', textAlign: 'center',
-                        fontSize: '0.75rem', color: '#bbb', textDecoration: 'none', padding: '0.3rem',
-                    }}>
+                {userTier !== 'pro' && (
+                    <a href="/pricing" style={{ display: 'block', marginTop: '0.1rem', textAlign: 'center', fontSize: '0.74rem', color: '#bbb', textDecoration: 'none', padding: '0.3rem' }}>
                         ↑ Upgrade to unlock more models
                     </a>
                 )}
             </div>
 
-            {/* Vocal Only toggle — only for music */}
+            {/* Vocal Only — music only */}
             {category === 'music' && (
                 <div style={{ borderTop: '1px solid #f5f5f5', paddingTop: '1rem', marginBottom: '0.75rem' }}>
-                    <div
-                        onClick={() => setVocalOnly(!vocalOnly)}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '0.3rem 0' }}
-                    >
+                    <div onClick={() => setVocalOnly(!vocalOnly)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '0.3rem 0' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <Mic2 size={15} color={vocalOnly ? '#111' : '#aaa'} />
                             <span style={{ fontSize: '0.87rem', fontWeight: '600', color: vocalOnly ? '#0a0a0a' : '#888' }}>Vocals Only (faster)</span>
@@ -257,12 +301,9 @@ export default function ConfigSection({
                 </div>
             )}
 
-            {/* Trim toggle */}
+            {/* Trim */}
             <div style={{ borderTop: '1px solid #f5f5f5', paddingTop: '0.85rem' }}>
-                <div
-                    onClick={handleTrimToggle}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '0.3rem 0' }}
-                >
+                <div onClick={handleTrimToggle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '0.3rem 0' }}>
                     <div>
                         <span style={{ fontSize: '0.87rem', fontWeight: '600', color: trimEnabled ? '#0a0a0a' : '#888' }}>✂️  Trim Audio</span>
                         <span style={{ fontSize: '0.73rem', color: '#bbb', marginLeft: '0.5rem' }}>select a section to process</span>
