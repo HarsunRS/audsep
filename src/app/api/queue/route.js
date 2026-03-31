@@ -6,6 +6,12 @@ import { createServerClient } from '../../../../lib/supabase';
 const ALLOWED_MODELS = ['htdemucs', 'htdemucs_ft', 'htdemucs_6s', 'mdx_extra_q'];
 const ALLOWED_CATEGORIES = ['music', 'speech', 'noise', 'wind'];
 
+// Comma-separated Clerk user IDs that bypass usage limits (e.g. for testing).
+// Set WHITELIST_CLERK_IDS in your .env.local or Railway environment variables.
+const WHITELISTED_IDS = new Set(
+  (process.env.WHITELIST_CLERK_IDS || '').split(',').map(s => s.trim()).filter(Boolean)
+);
+
 /**
  * POST /api/queue
  * Body: { inputPath, filename, model, category, vocalOnly, trimStart, trimEnd }
@@ -19,7 +25,17 @@ export async function POST(request) {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const usage = await checkAndIncrementUsage(userId);
+    const isWhitelisted = WHITELISTED_IDS.has(userId);
+    let usage;
+    if (isWhitelisted) {
+      // Whitelisted accounts get unlimited separations — skip the usage check entirely.
+      // Still call the RPC to ensure the user row exists; just ignore the allowed flag.
+      const fallback = await checkAndIncrementUsage(userId);
+      usage = { ...fallback, allowed: true, limit: 9999 };
+    } else {
+      usage = await checkAndIncrementUsage(userId);
+    }
+
     if (!usage.allowed) {
       return NextResponse.json({
         error: 'Daily limit reached. Upgrade to Pro for unlimited separations.',
