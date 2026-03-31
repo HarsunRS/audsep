@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createServerClient } from '../../../../../lib/supabase';
+import { getDownloadUrl } from '../../../../../lib/storage';
 
 // DELETE /api/jobs/[id] — cancel a queued job (no-op if already processing/done)
 export async function DELETE(req, { params }) {
@@ -52,15 +53,20 @@ export async function GET(req, { params }) {
 
   if (error || !job) return NextResponse.json({ error: 'Job not found' }, { status: 404 });
 
-  // If output_urls contains storage paths, generate signed URLs
+  // If output_urls contains storage paths, generate signed URLs.
+  // output_urls may arrive as a parsed object (jsonb) or as a JSON string
+  // if the worker double-encoded it — handle both.
   let tracks = job.output_urls;
-  if (job.status === 'done' && tracks) {
-    const { getDownloadUrl } = await import('../../../../../lib/storage');
+  if (typeof tracks === 'string') {
+    try { tracks = JSON.parse(tracks); } catch { tracks = null; }
+  }
+  if (job.status === 'done' && tracks && typeof tracks === 'object') {
     const signed = {};
     for (const [stem, path] of Object.entries(tracks)) {
       try {
         signed[stem] = await getDownloadUrl('outputs', path, 172800); // 48h
-      } catch {
+      } catch (e) {
+        console.error(`[jobs/${job.id}] signed URL failed for ${stem}:`, e.message);
         signed[stem] = path; // fallback to raw path
       }
     }

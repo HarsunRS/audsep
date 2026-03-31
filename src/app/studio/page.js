@@ -79,7 +79,13 @@ export default function AppPage() {
             } catch {
                 continue; // transient network error — keep trying
             }
-            if (!pollRes.ok) continue;
+            if (!pollRes.ok) {
+                if (pollRes.status >= 500) {
+                    // Server error — log it so it shows in browser console
+                    console.warn(`[poll] job ${jobId} → HTTP ${pollRes.status}`);
+                }
+                continue;
+            }
 
             const job = await pollRes.json();
 

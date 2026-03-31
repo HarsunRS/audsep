@@ -195,7 +195,7 @@ def process_job(job):
         # ── Mark done ─────────────────────────────────────────────────────────
         sb_patch("jobs", {
             "status": "done",
-            "output_urls": json.dumps(output_paths),
+            "output_urls": output_paths,
         }, {"id": job_id})
 
         users = sb_get("users", f"id=eq.{user_id}&select=email,name")
