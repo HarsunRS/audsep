@@ -173,9 +173,28 @@ def process_job(job):
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
 
+# ── Startup cleanup ────────────────────────────────────────────────────────────
+def reset_stuck_jobs():
+    """
+    On startup, any job left in 'processing' means the worker crashed mid-run.
+    Reset them to 'queued' so they get retried automatically.
+    """
+    r = requests.patch(
+        f"{SUPABASE_URL}/rest/v1/jobs?status=eq.processing",
+        headers=HEADERS,
+        json={"status": "queued"},
+    )
+    if r.ok:
+        reset = r.json()
+        if reset:
+            print(f"[worker] Reset {len(reset)} stuck processing job(s) back to queued.")
+    else:
+        print(f"[worker] Warning: could not reset stuck jobs: {r.text}")
+
 # ── Main poll loop ─────────────────────────────────────────────────────────────
 def main():
     print(f"[worker] Started — polling every {POLL_INTERVAL}s")
+    reset_stuck_jobs()
     while True:
         try:
             jobs = sb_get("jobs", "status=eq.queued&order=created_at.asc&limit=1")
