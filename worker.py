@@ -102,6 +102,35 @@ def send_stems_ready(email, name, job_id, stem_names):
         }
     )
 
+# ── Cancellable subprocess helper ─────────────────────────────────────────────
+def run_cancellable(cmd, job_id, timeout=JOB_TIMEOUT):
+    """
+    Run cmd via Popen; poll the DB every 5 s for a 'cancelled' status.
+    Kills the subprocess immediately if cancellation is detected.
+    Returns 'cancelled' | 'done'. Raises on non-zero exit or timeout.
+    """
+    proc = subprocess.Popen(cmd)
+    start = time.time()
+    while proc.poll() is None:
+        elapsed = time.time() - start
+        if elapsed > timeout:
+            proc.kill()
+            proc.wait()
+            raise subprocess.TimeoutExpired(cmd, timeout)
+        try:
+            rows = sb_get("jobs", f"id=eq.{job_id}&select=status")
+            if rows and rows[0].get("status") == "cancelled":
+                proc.kill()
+                proc.wait()
+                return "cancelled"
+        except Exception:
+            pass  # DB hiccup — keep going
+        time.sleep(5)
+    if proc.returncode != 0:
+        raise subprocess.CalledProcessError(proc.returncode, cmd)
+    return "done"
+
+
 # ── Job processor ──────────────────────────────────────────────────────────────
 def process_job(job):
     job_id     = job["id"]
@@ -180,7 +209,10 @@ def process_job(job):
                 cmd += ["--two-stems", "vocals"]
             cmd.append(wav_path)
 
-            subprocess.run(cmd, check=True, timeout=JOB_TIMEOUT)
+            result = run_cancellable(cmd, job_id)
+            if result == "cancelled":
+                print(f"[worker] Job {job_id} cancelled mid-processing.")
+                return  # tmpdir cleaned up in finally
 
             base      = pathlib.Path(wav_path).stem  # "input"
             model_out = os.path.join(out_dir, model, base)

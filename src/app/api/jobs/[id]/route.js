@@ -19,19 +19,20 @@ export async function DELETE(req, { params }) {
 
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-  // Only cancel jobs that are still queued — a processing job cannot be stopped safely
+  // Cancel jobs that are queued or processing.
+  // The worker polls for 'cancelled' every 5 s and kills Demucs if found.
   const { data: job, error } = await db
     .from('jobs')
     .update({ status: 'cancelled' })
     .eq('id', params.id)
-    .eq('user_id', user.id)   // ownership check
-    .eq('status', 'queued')   // only if not yet picked up by worker
+    .eq('user_id', user.id)                    // ownership check
+    .in('status', ['queued', 'processing'])    // allow cancelling mid-run
     .select('id, status')
     .single();
 
   if (error || !job) {
     return NextResponse.json(
-      { error: 'Job not found, not owned by you, or already being processed.' },
+      { error: 'Job not found, not owned by you, or already done/cancelled.' },
       { status: 409 }
     );
   }
