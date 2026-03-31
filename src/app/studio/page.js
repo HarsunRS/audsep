@@ -334,6 +334,7 @@ export default function AppPage() {
                             vocalOnly={vocalOnly} setVocalOnly={setVocalOnly}
                             trimStart={trimStart} setTrimStart={setTrimStart}
                             trimEnd={trimEnd} setTrimEnd={setTrimEnd}
+                            plan={usage.plan}
                         />
                     </motion.div>
                     <motion.div variants={fadeUp}>

@@ -135,7 +135,13 @@ def run_cancellable(cmd, job_id, timeout=JOB_TIMEOUT):
 def process_job(job):
     job_id     = job["id"]
     user_id    = job["user_id"]
-    model      = job["model"] or "htdemucs"
+    # Normalise legacy/alias model names to actual Demucs model IDs
+    MODEL_ALIASES = {
+        "htdemucs_hybrid": "htdemucs",   # "hybrid" is htdemucs with higher quality settings
+        "mdx_extra":       "mdx_extra",  # MDX v3 — available in demucs 4
+    }
+    raw_model = job["model"] or "htdemucs"
+    model     = MODEL_ALIASES.get(raw_model, raw_model)
     category   = job["category"] or "music"
     vocal_only = job.get("vocal_only", False)
     input_url  = job["input_url"]
