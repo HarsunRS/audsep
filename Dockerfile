@@ -14,6 +14,10 @@ RUN python -m venv .venv
 # Install dependencies into the virtual environment
 RUN .venv/bin/pip install --no-cache-dir -r requirements.txt
 
+# Pre-download Demucs model checkpoints so they are baked into the image
+# and never re-downloaded at runtime. htdemucs is the default model.
+RUN .venv/bin/python -c "from demucs.pretrained import get_model; get_model('htdemucs'); get_model('htdemucs_ft')"
+
 # Copy the rest of the app into the container
 COPY . .
 
