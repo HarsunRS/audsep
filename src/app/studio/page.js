@@ -68,8 +68,13 @@ export default function AppPage() {
             const urlRes = await fetch('/api/upload-url', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                redirect: 'manual',
                 body: JSON.stringify({ filename: file.name, contentType: file.type || 'audio/*' }),
             });
+            if (urlRes.type === 'opaqueredirect' || urlRes.status === 307 || urlRes.status === 401) {
+                window.location.href = '/signin';
+                return;
+            }
             if (!urlRes.ok) {
                 const e = await urlRes.json().catch(() => ({}));
                 throw new Error(e.error || 'Could not get upload URL');
