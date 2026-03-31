@@ -157,7 +157,7 @@ def process_job(job):
     def _plan_duration_limit(p):
         if not p or p == "free":            return 300
         if p.startswith("basic"):           return 600
-        return 1800  # pro, studio, team
+        return 1800  # pro, team
 
     max_duration = _plan_duration_limit(user_plan)
     free_plan    = (not user_plan or user_plan == "free")

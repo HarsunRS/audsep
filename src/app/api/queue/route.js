@@ -26,7 +26,7 @@ const TIER_ORDER = { free: 0, basic: 1, pro: 2 };
 function planToTier(plan) {
     if (!plan || plan === 'free') return 'free';
     if (plan.startsWith('basic')) return 'basic';
-    return 'pro'; // pro-monthly, pro-yearly, studio, team
+    return 'pro'; // pro-monthly, pro-yearly, team
 }
 
 // Comma-separated Clerk user IDs that bypass usage limits (e.g. for testing).
