@@ -36,10 +36,11 @@ BEGIN
     WHEN 'basic'           THEN 30
     WHEN 'basic-monthly'   THEN 30
     WHEN 'basic-yearly'    THEN 30
-    -- Pro: unlimited (9999)
-    WHEN 'pro'             THEN 9999
-    WHEN 'pro-monthly'     THEN 9999
-    WHEN 'pro-yearly'      THEN 9999
+    -- Pro: 100/month
+    WHEN 'pro'             THEN 100
+    WHEN 'pro-monthly'     THEN 100
+    WHEN 'pro-yearly'      THEN 100
+    -- Studio/team: unlimited (9999)
     WHEN 'studio'          THEN 9999
     WHEN 'studio-monthly'  THEN 9999
     WHEN 'studio-yearly'   THEN 9999
