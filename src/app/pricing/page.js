@@ -19,6 +19,23 @@ const stagger = {
 
 const getPlans = (yearly) => [
     {
+        name: 'Free',
+        price: '$0',
+        sub: '/month',
+        saving: null,
+        desc: 'Try it out. No credit card required.',
+        features: [
+            '3 separations per day',
+            'MP3 output',
+            'MDX-Net Q model',
+            'Max 5 min track length',
+            'Quick Voice Lift & Denoiser',
+        ],
+        cta: 'Get Started Free',
+        plan: null,
+        highlight: false,
+    },
+    {
         name: 'Basic',
         price: yearly ? '$48' : '$5',
         sub: yearly ? '/year' : '/month',
@@ -26,9 +43,10 @@ const getPlans = (yearly) => [
         desc: 'Great for hobbyists who need more length and quality.',
         features: [
             '30 separations per month',
-            'High quality WAV output',
-            'HTDemucs model only',
-            'Max 15 min track length',
+            'WAV output',
+            'Demucs v3 & HTDemucs models',
+            'Max 10 min track length',
+            'HTDemucs Voice isolation',
             'Standard processing queue',
         ],
         cta: 'Get Basic',
@@ -37,40 +55,21 @@ const getPlans = (yearly) => [
     },
     {
         name: 'Pro',
-        price: yearly ? '$144' : '$15',
+        price: yearly ? '$172' : '$18',
         sub: yearly ? '/year' : '/month',
-        saving: yearly ? 'Save $36/yr' : null,
+        saving: yearly ? 'Save $44/yr' : null,
         desc: 'For producers & DJs who need high volume & all models.',
         features: [
             '100 separations per month',
-            'Hi-res 32-bit float output',
-            'All models (HTDemucs, MDX-Net)',
-            'Max 60 min track length',
+            'WAV / FLAC / MP3 output',
+            'All models incl. 6-stem & Hybrid',
+            'Max 30 min track length',
+            'Fine-tuned Voice & DNS64 Denoiser',
             'Priority processing queue',
-            'Batch upload (up to 10 tracks)',
         ],
         cta: 'Get Pro',
         plan: yearly ? 'pro-yearly' : 'pro-monthly',
         highlight: true,
-    },
-    {
-        name: 'Studio',
-        price: yearly ? '$336' : '$35',
-        sub: yearly ? '/year' : '/month',
-        saving: yearly ? 'Save $84/yr' : null,
-        desc: 'API access, SLA guarantees, and volume pricing for studios.',
-        features: [
-            '300 separations per month',
-            'Everything in Pro',
-            'REST API access + API keys',
-            'Webhooks & callbacks',
-            'SLA & uptime guarantee',
-            'Priority support',
-            'Dedicated processing queue',
-        ],
-        cta: 'Get Studio',
-        plan: yearly ? 'studio-yearly' : 'studio-monthly',
-        highlight: false,
     },
 ];
 
@@ -182,19 +181,31 @@ export default function PricingPage() {
                                 ))}
                             </ul>
 
-                            <button onClick={() => handleCheckout(plan.plan)}
-                                disabled={loadingPlan === plan.plan}
-                                style={{
+                            {plan.plan === null ? (
+                                <a href="/studio" style={{
                                     display: 'block', width: '100%', textAlign: 'center',
                                     fontWeight: '700', padding: '0.85rem', borderRadius: '10px',
-                                    fontSize: '0.95rem', cursor: 'pointer', border: 'none',
-                                    background: plan.highlight ? '#fff' : '#111',
-                                    color: plan.highlight ? '#111' : '#fff',
-                                    opacity: loadingPlan === plan.plan ? 0.7 : 1,
-                                    marginTop: 'auto',
+                                    fontSize: '0.95rem', background: '#f3f3f3', color: '#111',
+                                    border: '1.5px solid #e5e5e5', textDecoration: 'none',
+                                    marginTop: 'auto', boxSizing: 'border-box',
                                 }}>
-                                {loadingPlan === plan.plan ? 'Redirecting…' : plan.cta}
-                            </button>
+                                    {plan.cta}
+                                </a>
+                            ) : (
+                                <button onClick={() => handleCheckout(plan.plan)}
+                                    disabled={loadingPlan === plan.plan}
+                                    style={{
+                                        display: 'block', width: '100%', textAlign: 'center',
+                                        fontWeight: '700', padding: '0.85rem', borderRadius: '10px',
+                                        fontSize: '0.95rem', cursor: 'pointer', border: 'none',
+                                        background: plan.highlight ? '#fff' : '#111',
+                                        color: plan.highlight ? '#111' : '#fff',
+                                        opacity: loadingPlan === plan.plan ? 0.7 : 1,
+                                        marginTop: 'auto',
+                                    }}>
+                                    {loadingPlan === plan.plan ? 'Redirecting…' : plan.cta}
+                                </button>
+                            )}
                         </motion.div>
                     ))}
                 </motion.div>
