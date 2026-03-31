@@ -79,7 +79,7 @@ export async function GET(req, { params }) {
     const signed = {};
     for (const [stem, path] of Object.entries(tracks)) {
       try {
-        signed[stem] = await getDownloadUrl('outputs', path, 172800); // 48h
+        signed[stem] = await getDownloadUrl('outputs', path, 2592000); // 30 days
       } catch (e) {
         console.error(`[jobs/${job.id}] signed URL failed for ${stem}:`, e.message);
         signed[stem] = path; // fallback to raw path

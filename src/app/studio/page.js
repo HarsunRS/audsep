@@ -93,7 +93,7 @@ export default function AppPage() {
                 setStatusLabel('Waiting for worker…');
             } else if (job.status === 'processing') {
                 setStatusLabel('Separating Audio…');
-                setProgress(prev => Math.min(prev + 2, 90));
+                setProgress(prev => prev + Math.max(0.3, (90 - prev) * 0.03));
             } else if (job.status === 'done') {
                 setProgress(100);
                 setStatusLabel('Done!');

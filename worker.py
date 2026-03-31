@@ -137,13 +137,15 @@ def process_job(job):
     user_id    = job["user_id"]
     # Normalise legacy/alias model names to actual Demucs model IDs
     MODEL_ALIASES = {
-        "htdemucs_hybrid": "htdemucs",   # "hybrid" is htdemucs with higher quality settings
-        "mdx_extra":       "mdx_extra",  # MDX v3 — available in demucs 4
+        "htdemucs_hybrid": "htdemucs_ft",  # Pro fine-tuned model
+        "mdx_extra":       "mdx_extra",    # MDX v3 — available in demucs 4
     }
-    raw_model = job["model"] or "htdemucs"
-    model     = MODEL_ALIASES.get(raw_model, raw_model)
+    raw_model  = job["model"] or "htdemucs"
+    model      = MODEL_ALIASES.get(raw_model, raw_model)
     category   = job["category"] or "music"
     vocal_only = job.get("vocal_only", False)
+    trim_start = job.get("trim_start") or 0
+    trim_end   = job.get("trim_end") or 0
     input_url  = job["input_url"]
     filename   = job.get("filename", "audio.mp3")
 
@@ -173,12 +175,13 @@ def process_job(job):
         with open(raw_path, "wb") as f:
             f.write(audio_data)
 
-        # ── Pre-convert to 44100 Hz stereo WAV ───────────────────────────────
+        # ── Pre-convert to 44100 Hz stereo WAV (with optional trim) ─────────
         wav_path = os.path.join(tmpdir, "input.wav")
-        subprocess.run(
-            ["ffmpeg", "-i", raw_path, "-ar", "44100", "-ac", "2", "-y", wav_path],
-            check=True, capture_output=True, timeout=120,
-        )
+        ffmpeg_conv = ["ffmpeg", "-i", raw_path, "-ar", "44100", "-ac", "2"]
+        if trim_end and trim_end > trim_start:
+            ffmpeg_conv += ["-ss", str(trim_start), "-to", str(trim_end)]
+        ffmpeg_conv += ["-y", wav_path]
+        subprocess.run(ffmpeg_conv, check=True, capture_output=True, timeout=120)
 
         # ── Enforce duration limit ────────────────────────────────────────────
         dur_result = subprocess.run(

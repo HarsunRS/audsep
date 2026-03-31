@@ -4,9 +4,12 @@ import React, { useCallback, useState } from 'react';
 import { UploadCloud, Music } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+const MAX_FILE_MB = 200;
+
 export default function UploadSection({ onFileSelect }) {
     const [dragActive, setDragActive] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
+    const [sizeError, setSizeError] = useState(null);
 
     const handleDrag = useCallback((e) => {
         e.preventDefault();
@@ -18,24 +21,29 @@ export default function UploadSection({ onFileSelect }) {
         }
     }, []);
 
+    const acceptFile = useCallback((file) => {
+        if (file.size > MAX_FILE_MB * 1024 * 1024) {
+            setSizeError(`File is too large (${(file.size / (1024 * 1024)).toFixed(0)} MB). Maximum is ${MAX_FILE_MB} MB.`);
+            return;
+        }
+        setSizeError(null);
+        setSelectedFile(file);
+        onFileSelect(file);
+    }, [onFileSelect]);
+
     const handleDrop = useCallback((e) => {
         e.preventDefault();
         e.stopPropagation();
         setDragActive(false);
-
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            const file = e.dataTransfer.files[0];
-            setSelectedFile(file);
-            onFileSelect(file);
+            acceptFile(e.dataTransfer.files[0]);
         }
-    }, [onFileSelect]);
+    }, [acceptFile]);
 
     const handleChange = (e) => {
         e.preventDefault();
         if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            setSelectedFile(file);
-            onFileSelect(file);
+            acceptFile(e.target.files[0]);
         }
     };
 
@@ -85,10 +93,15 @@ export default function UploadSection({ onFileSelect }) {
                         <UploadCloud size={48} color="var(--primary)" style={{ marginBottom: '1rem' }} />
                         <h3 style={{ fontSize: '1.5rem', fontWeight: '600' }}>Drag & Drop Audio</h3>
                         <p style={{ color: 'var(--text-muted)' }}>or click to browse from your device</p>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>MP3, WAV, FLAC, etc.</p>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>MP3, WAV, FLAC, etc. · Max {MAX_FILE_MB} MB</p>
                     </div>
                 )}
             </div>
+            {sizeError && (
+                <p style={{ marginTop: '0.75rem', color: '#dc2626', fontSize: '0.875rem', fontWeight: '500', textAlign: 'center' }}>
+                    {sizeError}
+                </p>
+            )}
         </motion.div>
     );
 }
