@@ -118,7 +118,7 @@ export default function ConfigSection({
             {/* Task selector */}
             <div style={{ marginBottom: '1.5rem' }}>
                 <div style={{ fontSize: '0.72rem', fontWeight: '700', color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>Task</div>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
                     {TASKS.map(task => {
                         const Icon = task.icon;
                         const active = task.category === category;
@@ -127,12 +127,13 @@ export default function ConfigSection({
                                 key={task.category}
                                 onClick={() => handleTaskChange(task)}
                                 style={{
-                                    display: 'flex', alignItems: 'center', gap: '0.4rem',
-                                    padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                                    padding: '0.55rem 1rem', borderRadius: '8px', cursor: 'pointer',
                                     border: active ? '1.5px solid #111' : '1.5px solid #e5e7eb',
                                     background: active ? '#111' : '#fff',
                                     color: active ? '#fff' : '#555',
                                     fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.15s',
+                                    whiteSpace: 'nowrap',
                                 }}
                             >
                                 <Icon size={14} />{task.label}
