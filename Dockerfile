@@ -16,20 +16,8 @@ RUN .venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # Pre-download all Demucs model checkpoints so they are baked into the image
 # and never re-downloaded at runtime.
-# Models by tier:
-#   free:  mdx_extra_q, mdx_extra
-#   basic: htdemucs, htdemucs_ft
-#   pro:   htdemucs_6s  (htdemucs_hybrid reuses htdemucs weights)
-RUN .venv/bin/python - <<'EOF'
-from demucs.pretrained import get_model
-for m in ['mdx_extra_q', 'mdx_extra', 'htdemucs', 'htdemucs_ft', 'htdemucs_6s']:
-    try:
-        get_model(m)
-        print(f'Downloaded {m}')
-    except Exception as e:
-        print(f'WARN: could not download {m}: {e}')
-print('Model pre-download complete.')
-EOF
+COPY download_models.py .
+RUN .venv/bin/python download_models.py
 
 # Copy the rest of the app into the container
 COPY . .
