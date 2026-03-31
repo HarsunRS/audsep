@@ -51,7 +51,7 @@ const getPlans = (yearly) => [
         ],
         cta: 'Get Basic',
         plan: yearly ? 'basic-yearly' : 'basic-monthly',
-        highlight: false,
+        highlight: true,
     },
     {
         name: 'Pro',
@@ -69,7 +69,7 @@ const getPlans = (yearly) => [
         ],
         cta: 'Get Pro',
         plan: yearly ? 'pro-yearly' : 'pro-monthly',
-        highlight: true,
+        highlight: false,
     },
 ];
 
