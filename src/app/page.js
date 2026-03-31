@@ -63,7 +63,7 @@ export default function LandingPage() {
           </motion.p>
 
           <motion.div variants={fadeUp} style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/studio" style={{
+            <Link href="/signin?redirect_url=/studio" style={{
               display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
               background: '#111', color: '#fff', padding: '0.9rem 2rem',
               borderRadius: '10px', fontWeight: '700', fontSize: '1rem', textDecoration: 'none',
@@ -194,7 +194,7 @@ export default function LandingPage() {
             Start separating today.<br />It's free.
           </h2>
           <p style={{ color: '#666', fontSize: '1.1rem', marginBottom: '2.5rem' }}>No account needed. Upload your first track in seconds.</p>
-          <Link href="/studio" style={{
+          <Link href="/signin?redirect_url=/studio" style={{
             display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
             background: '#111', color: '#fff', padding: '1rem 2.5rem',
             borderRadius: '12px', fontWeight: '700', fontSize: '1.05rem', textDecoration: 'none',

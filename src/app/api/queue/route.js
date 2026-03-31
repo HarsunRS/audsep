@@ -43,8 +43,6 @@ export async function POST(request) {
       vocal_only: vocalOnly,
       filename: filename || 'audio',
       input_url: inputPath,
-      trim_start: trimStart || null,
-      trim_end: trimEnd > trimStart ? trimEnd : null,
     }).select().single();
 
     if (jobError || !job) {
