@@ -45,15 +45,21 @@ const MODEL_GROUPS = [
 
 export default function ConfigSection({ model, setModel, category, setCategory, vocalOnly, setVocalOnly, trimStart, setTrimStart, trimEnd, setTrimEnd }) {
     const activeGroup = MODEL_GROUPS.find(g => g.category === category) || MODEL_GROUPS[0];
+    const [trimEnabled, setTrimEnabled] = React.useState(false);
 
-    // Single callback that lets the parent batch category+model in one setState
     const handleGroupChange = (group) => {
-        // Both setCategory and setModel are functional updaters from parent that
-        // have been bound to a single modelConfig state object — so these two
-        // calls result in ONE re-render, not two.
         setCategory(group.category);
         setModel(group.models[0].value);
         if (group.category !== 'music') setVocalOnly(false);
+    };
+
+    const handleTrimToggle = () => {
+        const next = !trimEnabled;
+        setTrimEnabled(next);
+        if (!next) {
+            setTrimStart(0);
+            setTrimEnd(0);
+        }
     };
 
     return (
@@ -142,18 +148,36 @@ export default function ConfigSection({ model, setModel, category, setCategory, 
                 </div>
             )}
 
-            {/* Trim controls */}
-            <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '0.75rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Trim&nbsp;
-                    <span style={{ fontWeight: '400', textTransform: 'none', letterSpacing: 0 }}>— drag to select a section</span>
-                </label>
-                <TrimSlider
-                    start={trimStart || 0}
-                    end={trimEnd || 300}
-                    max={600}
-                    onChange={(s, e) => { setTrimStart(s); setTrimEnd(e); }}
-                />
+            {/* Trim toggle + collapsible slider */}
+            <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: '1rem' }}>
+                <div
+                    onClick={handleTrimToggle}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '0.4rem 0' }}
+                >
+                    <div>
+                        <span style={{ fontSize: '0.9rem', fontWeight: '600', color: trimEnabled ? '#0a0a0a' : '#888' }}>✂️  Trim Audio</span>
+                        <span style={{ fontSize: '0.78rem', color: '#bbb', marginLeft: '0.5rem' }}>select a section to process</span>
+                    </div>
+                    <div style={{ width: '40px', height: '22px', borderRadius: '11px', background: trimEnabled ? '#111' : '#e0e0e0', position: 'relative', transition: 'background 0.3s', flexShrink: 0 }}>
+                        <motion.div layout style={{ position: 'absolute', width: '18px', height: '18px', borderRadius: '50%', background: '#fff', top: '2px', left: trimEnabled ? '20px' : '2px', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
+                    </div>
+                </div>
+
+                {trimEnabled && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                        style={{ marginTop: '1rem' }}
+                    >
+                        <TrimSlider
+                            start={trimStart || 0}
+                            end={trimEnd || 300}
+                            max={600}
+                            onChange={(s, e) => { setTrimStart(s); setTrimEnd(e); }}
+                        />
+                    </motion.div>
+                )}
             </div>
         </motion.div>
     );
