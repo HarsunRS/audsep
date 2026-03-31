@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyWebhookSignature } from '../../../../../lib/razorpay';
+import { verifyWebhookSignature, isPaidAmountValid } from '../../../../../lib/razorpay';
 import { createServerClient } from '../../../../../lib/supabase';
 
 // Assuming lib/email exists since it was in the original codebase
@@ -34,6 +34,13 @@ export async function POST(req) {
         if (!clerkUserId || !rawPlan) {
             console.error('Webhook missing clerkUserId or plan from notes:', notes);
             return NextResponse.json({ received: true });
+        }
+
+        // Verify paid amount matches the expected price for this plan
+        // This prevents a crafted webhook from granting a higher-tier plan for less money
+        if (!isPaidAmountValid(rawPlan, entity.amount)) {
+            console.error(`Webhook amount mismatch: plan=${rawPlan}, amount=${entity.amount}`);
+            return NextResponse.json({ error: 'Amount mismatch' }, { status: 400 });
         }
 
         // Normalize plan key: "basic-monthly" → "basic", "pro-yearly" → "pro", etc.

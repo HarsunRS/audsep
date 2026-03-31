@@ -52,13 +52,21 @@ export async function GET(req, { params }) {
   const { id: jobId } = await params;
 
   const db = createServerClient();
+
+  // Resolve internal user id for ownership check
+  const { data: user } = await db.from('users').select('id').eq('clerk_id', userId).single();
+  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
   const { data: job, error } = await db
     .from('jobs')
-    .select('id, status, output_urls, filename, model, category, error, created_at')
+    .select('id, status, output_urls, filename, model, category, error, created_at, user_id')
     .eq('id', jobId)
     .single();
 
   if (error || !job) return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+
+  // Ownership check — prevent users from polling other users' jobs
+  if (job.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   // If output_urls contains storage paths, generate signed URLs.
   // output_urls may arrive as a parsed object (jsonb) or as a JSON string

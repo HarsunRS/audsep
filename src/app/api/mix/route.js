@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs/promises';
@@ -19,22 +20,40 @@ const runCommand = (command, args, cwd) => {
 };
 
 export async function POST(request) {
+    // ── Auth check ────────────────────────────────────────────────────────────
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     try {
         const { tracks } = await request.json();
         if (!tracks || !tracks.length) {
             return NextResponse.json({ error: 'No tracks provided' }, { status: 400 });
         }
 
-        const inputFiles = tracks.map(t => ({
-            ...t,
-            // Convert public path like /outputs/timestamp/vocals.wav to absolute OS path
-            localPath: path.join(process.cwd(), 'public', t.url.replace(/^\//, ''))
-        }));
+        // ── Validate and sanitize each track ─────────────────────────────────
+        const publicRoot = path.resolve(process.cwd(), 'public');
+        const inputFiles = [];
+
+        for (const t of tracks) {
+            // Volume must be a finite number between 0 and 2
+            const vol = parseFloat(t.volume);
+            if (!isFinite(vol) || vol < 0 || vol > 2) {
+                return NextResponse.json({ error: 'Invalid volume value' }, { status: 400 });
+            }
+
+            // Resolve path and ensure it stays within public/
+            const resolved = path.resolve(publicRoot, t.url.replace(/^\//, ''));
+            if (!resolved.startsWith(publicRoot + path.sep) && resolved !== publicRoot) {
+                return NextResponse.json({ error: 'Invalid track path' }, { status: 400 });
+            }
+
+            inputFiles.push({ ...t, volume: vol, localPath: resolved });
+        }
 
         for (const file of inputFiles) {
             try {
                 await fs.access(file.localPath);
-            } catch (e) {
+            } catch {
                 throw new Error(`Track file not found: ${file.localPath}`);
             }
         }
@@ -42,17 +61,15 @@ export async function POST(request) {
         const uniqueId = Date.now().toString();
         const publicOutputDir = path.join(process.cwd(), 'public', 'outputs', 'mixes');
         await fs.mkdir(publicOutputDir, { recursive: true });
-
         const outputPath = path.join(publicOutputDir, `mix_${uniqueId}.wav`);
 
         const ffmpegArgs = [];
-        inputFiles.forEach(f => {
-            ffmpegArgs.push('-i', f.localPath);
-        });
+        inputFiles.forEach(f => { ffmpegArgs.push('-i', f.localPath); });
 
         let filterStr = '';
         let amixInputs = '';
         inputFiles.forEach((f, i) => {
+            // volume is validated as a number above — safe to interpolate
             filterStr += `[${i}:a]volume=${f.volume}[a${i}];`;
             amixInputs += `[a${i}]`;
         });
@@ -62,12 +79,9 @@ export async function POST(request) {
         ffmpegArgs.push('-map', '[aout]');
         ffmpegArgs.push('-y', outputPath);
 
-        console.log(`Running ffmpeg with args: ${ffmpegArgs.join(' ')}`);
         await runCommand('ffmpeg', ffmpegArgs, process.cwd());
 
-        const mixUrl = `/outputs/mixes/mix_${uniqueId}.wav`;
-
-        return NextResponse.json({ success: true, url: mixUrl });
+        return NextResponse.json({ success: true, url: `/outputs/mixes/mix_${uniqueId}.wav` });
 
     } catch (error) {
         console.error('Error in mix API:', error);
