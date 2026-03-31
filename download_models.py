@@ -19,7 +19,9 @@ except Exception as e:
 try:
     import denoiser.pretrained as dp
 
-    for name, loader in [('master64 (default denoiser)', dp.master64), ('dns64 (wind denoiser)', dp.dns64)]:
+    # dns48 = default model used by `denoiser.enhance` (no flags)  → noise category
+    # dns64 = used with --dns64 flag                               → wind category
+    for name, loader in [('dns48 (default denoiser)', dp.dns48), ('dns64 (wind denoiser)', dp.dns64)]:
         try:
             loader()
             print(f'Downloaded denoiser model: {name}', flush=True)
