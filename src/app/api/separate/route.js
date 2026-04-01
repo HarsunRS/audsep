@@ -117,7 +117,9 @@ async function processLocally({ job, db, buffer, safeFilename, model, category, 
         let outputFiles = {};
 
         if (category === 'noise' || category === 'wind') {
-          const monoWav = path.join(tempDir, 'mono.wav');
+          const noisyDir = path.join(tempDir, 'noisy');
+          await fs.mkdir(noisyDir, { recursive: true });
+          const monoWav = path.join(noisyDir, 'mono.wav');
           await new Promise((res, rej) => {
             const p = spawn('ffmpeg', ['-i', inputFilePath, '-ar', '16000', '-ac', '1', '-y', monoWav]);
             p.on('close', code => code === 0 ? res() : rej(new Error('ffmpeg resample failed')));
@@ -125,7 +127,7 @@ async function processLocally({ job, db, buffer, safeFilename, model, category, 
           });
           const denoiserOut = path.join(tempDir, 'enhanced');
           await fs.mkdir(denoiserOut, { recursive: true });
-          const denoiserArgs = ['-m', 'denoiser.enhance', '--noisy_dir', path.dirname(monoWav), '--out_dir', denoiserOut, '--device', 'cpu'];
+          const denoiserArgs = ['-m', 'denoiser.enhance', '--noisy_dir', noisyDir, '--out_dir', denoiserOut, '--device', 'cpu'];
           if (category === 'wind') denoiserArgs.push('--dns64');
           await new Promise((res, rej) => {
             const p = spawn(venvBin('python'), denoiserArgs, { cwd: tempDir });
