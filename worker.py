@@ -326,17 +326,23 @@ def process_job(job):
 # ── Startup cleanup ────────────────────────────────────────────────────────────
 def reset_stuck_jobs():
     """Reset jobs left in 'processing' from a previous crashed worker run."""
-    r = requests.patch(
-        f"{SUPABASE_URL}/rest/v1/jobs?status=eq.processing",
-        headers=HEADERS,
-        json={"status": "queued"},
-    )
-    if r.ok:
-        reset = r.json()
-        if reset:
-            print(f"[worker] Reset {len(reset)} stuck processing job(s) back to queued.")
-    else:
-        print(f"[worker] Warning: could not reset stuck jobs: {r.text}")
+    try:
+        r = requests.patch(
+            f"{SUPABASE_URL}/rest/v1/jobs?status=eq.processing",
+            headers=HEADERS,
+            json={"status": "queued"},
+        )
+        if r.ok:
+            # Supabase returns 204 No Content when no rows matched — don't parse body then
+            if r.status_code == 204 or not r.content:
+                return
+            reset = r.json()
+            if reset:
+                print(f"[worker] Reset {len(reset)} stuck processing job(s) back to queued.")
+        else:
+            print(f"[worker] Warning: could not reset stuck jobs: {r.text}")
+    except Exception as e:
+        print(f"[worker] Warning: reset_stuck_jobs error (non-fatal): {e}")
 
 # ── Main poll loop ─────────────────────────────────────────────────────────────
 def main():
