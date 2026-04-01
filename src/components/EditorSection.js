@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Download, Music2 } from 'lucide-react';
+import { Download, Loader2, Music2 } from 'lucide-react';
 import WaveSurfer from 'wavesurfer.js';
 
 const TRACK_COLORS = {
@@ -24,6 +24,7 @@ function StemCard({ stem, url }) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
+    const [isDownloading, setIsDownloading] = useState(false);
 
     const colors = TRACK_COLORS[stem?.toLowerCase()] || TRACK_COLORS.other;
     const label = stem ? stem.charAt(0).toUpperCase() + stem.slice(1).replace(/_/g, ' ') : '';
@@ -68,6 +69,28 @@ function StemCard({ stem, url }) {
         };
     }, [url]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    const handleDownload = async () => {
+        if (!url || isDownloading) return;
+        setIsDownloading(true);
+        try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            const ext = blob.type.includes('mpeg') ? 'mp3' : 'wav';
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `${stem}.${ext}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+        } catch (err) {
+            console.error('[download]', err);
+            alert('Download failed. Please try again.');
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
     const fmtTime = (t) => {
         const m = Math.floor(t / 60);
         const s = Math.floor(t % 60).toString().padStart(2, '0');
@@ -109,19 +132,20 @@ function StemCard({ stem, url }) {
                 </button>
 
                 {/* Download */}
-                <a
-                    href={url}
-                    download={`${stem}.wav`}
+                <button
+                    onClick={handleDownload}
+                    disabled={isDownloading}
                     style={{
                         display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-                        padding: '0 1rem', height: '30px', borderRadius: '6px',
+                        padding: '0 1rem', height: '30px', borderRadius: '6px', border: 'none',
                         background: '#111', color: '#fff',
-                        textDecoration: 'none', fontWeight: '600', fontSize: '0.8rem',
-                        flexShrink: 0,
+                        fontWeight: '600', fontSize: '0.8rem', cursor: isDownloading ? 'not-allowed' : 'pointer',
+                        opacity: isDownloading ? 0.6 : 1, flexShrink: 0,
                     }}
                 >
-                    <Download size={13} /> Download
-                </a>
+                    {isDownloading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                    {isDownloading ? 'Downloading…' : 'Download'}
+                </button>
             </div>
 
             {/* Waveform */}
