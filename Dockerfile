@@ -37,4 +37,5 @@ RUN .venv/bin/python download_models.py
 COPY . .
 
 # Start the worker
-CMD [".venv/bin/python", "worker.py"]
+ENV PYTHONUNBUFFERED=1
+CMD [".venv/bin/python", "-u", "worker.py"]

@@ -408,10 +408,29 @@ def main():
             else:
                 time.sleep(POLL_INTERVAL)
         except KeyboardInterrupt:
-            print("\n[worker] Shutting down.")
+            print("\n[worker] Shutting down.", flush=True)
             break
+        except requests.HTTPError as e:
+            # claim_job RPC not found (migration not run yet) — fall back to direct query
+            if e.response is not None and e.response.status_code == 404:
+                print("[worker] claim_job RPC not found — run supabase/migrations/005_claim_job.sql in Supabase. Falling back to direct poll.", flush=True)
+                try:
+                    cats = ",".join(WORKER_CATEGORIES)
+                    jobs = sb_get("jobs", f"status=eq.queued&category=in.({cats})&order=created_at.asc&limit=1")
+                    if jobs:
+                        sb_patch("jobs", {"status": "processing"}, {"id": jobs[0]["id"]})
+                        process_job(jobs[0])
+                    else:
+                        time.sleep(POLL_INTERVAL)
+                except Exception as inner:
+                    print(f"[worker] Fallback poll error: {inner}", flush=True)
+                    time.sleep(POLL_INTERVAL)
+            else:
+                print(f"[worker] Poll error (retry in {backoff}s): {e}", flush=True)
+                time.sleep(backoff)
+                backoff = min(backoff * 2, 60)
         except Exception as e:
-            print(f"[worker] Poll error (retry in {backoff}s): {e}")
+            print(f"[worker] Poll error (retry in {backoff}s): {e}", flush=True)
             time.sleep(backoff)
             backoff = min(backoff * 2, 60)  # cap at 60s
 
