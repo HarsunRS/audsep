@@ -224,7 +224,11 @@ def process_job(job):
             ]
             if category == "wind":
                 cmd.append("--dns64")
-            subprocess.run(cmd, check=True, capture_output=True, timeout=JOB_TIMEOUT)
+            result = subprocess.run(cmd, capture_output=True, timeout=JOB_TIMEOUT)
+            if result.returncode != 0:
+                stderr_text = result.stderr.decode(errors='replace')
+                print(f"[worker] denoiser stderr:\n{stderr_text}")
+                raise RuntimeError(f"Denoiser failed (exit {result.returncode}):\n{stderr_text}")
 
             base         = pathlib.Path(mono_wav).stem
             enhanced_src = os.path.join(enhanced_dir, f"{base}_enhanced.wav")
@@ -308,10 +312,13 @@ def process_job(job):
         sb_patch("jobs", {"status": "failed", "error": msg}, {"id": job_id})
 
     except Exception as e:
-        detail = getattr(e, 'stderr', '') or ''
-        msg = str(e) + (f"\n{detail.strip()}" if detail.strip() else '')
+        stderr_attr = getattr(e, 'stderr', None)
+        if isinstance(stderr_attr, bytes):
+            stderr_attr = stderr_attr.decode(errors='replace')
+        detail = (stderr_attr or '').strip()
+        msg = str(e) + (f"\n{detail}" if detail else '')
         print(f"[worker] Job {job_id} failed: {msg}")
-        sb_patch("jobs", {"status": "failed", "error": msg[:500]}, {"id": job_id})
+        sb_patch("jobs", {"status": "failed", "error": msg[:2000]}, {"id": job_id})
 
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
