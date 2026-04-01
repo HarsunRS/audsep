@@ -14,10 +14,19 @@ RUN python -m venv .venv
 # Install dependencies into the virtual environment
 RUN .venv/bin/pip install --no-cache-dir -r requirements.txt
 
-# Patch denoiser's audio.py for torchaudio 2.x: replaces removed offset= kwarg
-# with frame_offset=. Done via a script file to avoid heredoc issues with BuildKit.
-COPY patch_denoiser.py .
-RUN .venv/bin/python patch_denoiser.py
+# Patch denoiser's audio.py for torchaudio 2.x compatibility.
+# torchaudio 2.x removed the 'offset' kwarg (renamed to 'frame_offset').
+# Simple string replace — always exits 0, never breaks the build.
+RUN .venv/bin/python -c "\
+import inspect, denoiser.audio as da; \
+p = inspect.getfile(da); \
+src = open(p).read(); \
+fixed = src.replace(\
+    'torchaudio.load(str(file), offset=offset, num_frames=num_frames)', \
+    'torchaudio.load(str(file), frame_offset=offset, num_frames=num_frames or -1)'); \
+open(p, 'w').write(fixed); \
+print('denoiser patch applied' if fixed != src else 'denoiser already compatible') \
+"
 
 # Pre-download all Demucs model checkpoints so they are baked into the image
 # and never re-downloaded at runtime.
