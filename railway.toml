@@ -1,0 +1,57 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+# ── Worker A: Stems separation ─────────────────────────────────────────────────
+[[services]]
+name = "worker-stems"
+
+[services.build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[services.deploy]
+startCommand = ".venv/bin/python worker.py"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
+healthcheckPath = "/"
+healthcheckTimeout = 10
+
+[services.variables]
+WORKER_CATEGORIES = "music"
+
+# ── Worker B: Voice isolation ──────────────────────────────────────────────────
+[[services]]
+name = "worker-voice"
+
+[services.build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[services.deploy]
+startCommand = ".venv/bin/python worker.py"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
+healthcheckPath = "/"
+healthcheckTimeout = 10
+
+[services.variables]
+WORKER_CATEGORIES = "speech,speaker"
+
+# ── Worker C: Denoising ────────────────────────────────────────────────────────
+[[services]]
+name = "worker-denoise"
+
+[services.build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[services.deploy]
+startCommand = ".venv/bin/python worker.py"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
+healthcheckPath = "/"
+healthcheckTimeout = 10
+
+[services.variables]
+WORKER_CATEGORIES = "noise,wind"

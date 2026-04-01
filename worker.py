@@ -12,9 +12,11 @@ Requires env vars (copy from .env.local):
   SUPABASE_SERVICE_ROLE_KEY
   RESEND_API_KEY (optional, for stems-ready emails)
   NEXT_PUBLIC_APP_URL (optional)
+  WORKER_CATEGORIES (optional, comma-separated, e.g. "music" or "noise,wind")
 """
 
-import os, sys, time, json, subprocess, tempfile, shutil, pathlib, requests
+import os, sys, time, json, subprocess, tempfile, shutil, pathlib, requests, threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 SUPABASE_URL         = os.environ.get("NEXT_PUBLIC_SUPABASE_URL", "")
@@ -22,6 +24,21 @@ SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 APP_URL              = os.environ.get("NEXT_PUBLIC_APP_URL", "http://localhost:3000")
 POLL_INTERVAL        = 5   # seconds between polls when queue is empty
 JOB_TIMEOUT          = 600 # 10 minutes hard limit per job
+
+# Which job categories this worker instance handles.
+# Set via Railway service env var, e.g. "music" or "noise,wind".
+# Defaults to all categories so a single un-configured worker still processes everything.
+_raw_categories  = os.environ.get("WORKER_CATEGORIES", "music,speech,speaker,noise,wind")
+WORKER_CATEGORIES = [c.strip() for c in _raw_categories.split(",") if c.strip()]
+
+VALID_CATEGORIES = {"music", "speech", "speaker", "noise", "wind"}
+_unknown = set(WORKER_CATEGORIES) - VALID_CATEGORIES
+if _unknown:
+    print(f"ERROR: Unknown categories in WORKER_CATEGORIES: {_unknown}")
+    sys.exit(1)
+if not WORKER_CATEGORIES:
+    print("ERROR: WORKER_CATEGORIES is empty. Set it to e.g. 'music' or 'noise,wind'.")
+    sys.exit(1)
 
 # Use all available CPU cores for PyTorch/OpenMP thread pools — helps inference speed.
 CPU_CORES = str(os.cpu_count() or 4)
@@ -56,6 +73,16 @@ def sb_patch(table, val_dict, match_dict):
     match_qs = "&".join(f"{k}=eq.{v}" for k, v in match_dict.items())
     r = requests.patch(f"{SUPABASE_URL}/rest/v1/{table}?{match_qs}", headers=HEADERS, json=val_dict)
     r.raise_for_status()
+
+def sb_rpc(func_name, params):
+    """Call a Supabase Postgres RPC function. Returns list of rows."""
+    r = requests.post(
+        f"{SUPABASE_URL}/rest/v1/rpc/{func_name}",
+        headers=HEADERS,
+        json=params,
+    )
+    r.raise_for_status()
+    return r.json() if r.content else []
 
 def sb_download(bucket, path):
     r = requests.get(
@@ -168,7 +195,7 @@ def process_job(job):
     max_duration = _plan_duration_limit(user_plan)
     free_plan    = (not user_plan or user_plan == "free")
 
-    sb_patch("jobs", {"status": "processing"}, {"id": job_id})
+    # Job is already 'processing' — set by claim_job RPC atomically
 
     tmpdir = tempfile.mkdtemp(prefix="audsep-")
     try:
@@ -325,42 +352,68 @@ def process_job(job):
 
 # ── Startup cleanup ────────────────────────────────────────────────────────────
 def reset_stuck_jobs():
-    """Reset jobs left in 'processing' from a previous crashed worker run."""
+    """
+    Reset 'processing' jobs for this worker's categories back to 'queued'.
+    Scoped to WORKER_CATEGORIES so a restarting worker only reclaims jobs of
+    its own type — other workers' active jobs are left untouched.
+    """
     try:
+        cats_qs = ",".join(WORKER_CATEGORIES)
         r = requests.patch(
-            f"{SUPABASE_URL}/rest/v1/jobs?status=eq.processing",
+            f"{SUPABASE_URL}/rest/v1/jobs?status=eq.processing&category=in.({cats_qs})",
             headers=HEADERS,
             json={"status": "queued"},
         )
         if r.ok:
-            # Supabase returns 204 No Content when no rows matched — don't parse body then
             if r.status_code == 204 or not r.content:
                 return
             reset = r.json()
             if reset:
-                print(f"[worker] Reset {len(reset)} stuck processing job(s) back to queued.")
+                print(f"[worker] Reset {len(reset)} stuck {WORKER_CATEGORIES} job(s) back to queued.")
         else:
             print(f"[worker] Warning: could not reset stuck jobs: {r.text}")
     except Exception as e:
         print(f"[worker] Warning: reset_stuck_jobs error (non-fatal): {e}")
 
+# ── Health check server (Railway health checks) ────────────────────────────────
+class _HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"ok")
+    def log_message(self, *args):
+        pass  # suppress noisy access logs
+
 # ── Main poll loop ─────────────────────────────────────────────────────────────
 def main():
-    print(f"[worker] Started — {CPU_CORES} CPU cores, polling every {POLL_INTERVAL}s, timeout {JOB_TIMEOUT}s")
+    # Start health check HTTP server in background thread
+    threading.Thread(
+        target=lambda: HTTPServer(("0.0.0.0", 8080), _HealthHandler).serve_forever(),
+        daemon=True,
+    ).start()
+
+    print(
+        f"[worker] Started — categories={WORKER_CATEGORIES}, "
+        f"{CPU_CORES} CPU cores, polling every {POLL_INTERVAL}s, timeout {JOB_TIMEOUT}s"
+    )
     reset_stuck_jobs()
+
+    backoff = POLL_INTERVAL
     while True:
         try:
-            jobs = sb_get("jobs", "status=eq.queued&order=created_at.asc&limit=1")
-            if jobs:
-                process_job(jobs[0])
+            rows = sb_rpc("claim_job", {"p_categories": WORKER_CATEGORIES})
+            backoff = POLL_INTERVAL  # reset on successful DB contact
+            if rows:
+                process_job(rows[0])
             else:
                 time.sleep(POLL_INTERVAL)
         except KeyboardInterrupt:
             print("\n[worker] Shutting down.")
             break
         except Exception as e:
-            print(f"[worker] Poll error: {e}")
-            time.sleep(POLL_INTERVAL)
+            print(f"[worker] Poll error (retry in {backoff}s): {e}")
+            time.sleep(backoff)
+            backoff = min(backoff * 2, 60)  # cap at 60s
 
 if __name__ == "__main__":
     main()
