@@ -19,8 +19,8 @@ import os, sys, time, json, subprocess, tempfile, shutil, pathlib, requests, thr
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-SUPABASE_URL         = os.environ.get("NEXT_PUBLIC_SUPABASE_URL", "")
-SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPABASE_URL         = os.environ.get("NEXT_PUBLIC_SUPABASE_URL", "").strip()
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 APP_URL              = os.environ.get("NEXT_PUBLIC_APP_URL", "http://localhost:3000")
 POLL_INTERVAL        = 5   # seconds between polls when queue is empty
 JOB_TIMEOUT          = 600 # 10 minutes hard limit per job
