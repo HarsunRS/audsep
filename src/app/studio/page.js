@@ -341,7 +341,7 @@ export default function AppPage() {
                         <ProcessButton isProcessing={isProcessing} progress={progress} statusLabel={statusLabel} onClick={handleProcess} onCancel={handleCancel} disabled={!file} />
                     </motion.div>
 
-                    {/* Output section — stems mixer for music, simple downloads for speech/denoise */}
+                    {/* Output section — stem download cards */}
                     {tracksUrls && (
                         <motion.div variants={fadeUp} id="editor-section" style={{ marginTop: '2rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
@@ -352,33 +352,7 @@ export default function AppPage() {
                                     ↩  Upload New File
                                 </button>
                             </div>
-
-                            {modelConfig.category === 'music' ? (
-                                <EditorSection tracksUrls={tracksUrls} />
-                            ) : (
-                                /* Simple download panel for speech / denoise */
-                                <div style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: '16px', padding: '1.5rem' }}>
-                                    <h2 style={{ fontSize: '1.3rem', fontWeight: '800', color: '#0a0a0a', marginBottom: '1rem' }}>
-                                        {modelConfig.category === 'speech' ? 'Isolated Tracks' : 'Denoised Audio'}
-                                    </h2>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                        {Object.entries(tracksUrls).map(([stem, url]) => (
-                                            <div key={stem} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.85rem 1rem', border: '1px solid #ebebeb', borderRadius: '10px' }}>
-                                                <span style={{ fontWeight: '600', fontSize: '0.9rem', color: '#0a0a0a', textTransform: 'capitalize' }}>
-                                                    {stem.replace(/_/g, ' ')}
-                                                </span>
-                                                <a
-                                                    href={url}
-                                                    download={`${stem}.wav`}
-                                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 1rem', background: '#111', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '0.82rem' }}
-                                                >
-                                                    ↓ Download
-                                                </a>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                            <EditorSection tracksUrls={tracksUrls} category={modelConfig.category} />
                         </motion.div>
                     )}
                 </motion.div>
