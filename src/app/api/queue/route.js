@@ -7,16 +7,17 @@ const ALLOWED_CATEGORIES = ['music', 'speech', 'noise', 'wind'];
 
 // Each model maps to the minimum tier required to use it.
 // 3-tier model gating matching the pricing page:
-//   free:  htdemucs, denoiser
-//   basic: htdemucs_ft, htdemucs_6s  (+free)
-//   pro:   htdemucs_hybrid, denoiser_dns64  (+basic+free)
+//   free:  htdemucs, rnnoise
+//   basic: htdemucs_ft, htdemucs_6s, dns64
+//   pro:   htdemucs_hybrid, deepfilternet
 const MODEL_TIERS = {
-    'htdemucs':        'free',
-    'htdemucs_ft':     'basic',
-    'htdemucs_6s':     'basic',
-    'htdemucs_hybrid': 'pro',
-    'denoiser':        'free',
-    'denoiser_dns64':  'pro',
+    'htdemucs':       'free',
+    'htdemucs_ft':    'basic',
+    'htdemucs_6s':    'basic',
+    'htdemucs_hybrid':'pro',
+    'rnnoise':        'free',
+    'dns64':          'basic',
+    'deepfilternet':  'pro',
 };
 const ALLOWED_MODELS = Object.keys(MODEL_TIERS);
 const TIER_ORDER = { free: 0, basic: 1, pro: 2 };

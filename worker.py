@@ -232,33 +232,66 @@ def process_job(job):
         output_paths = {}
 
         if category in ("noise", "wind"):
-            # ── Facebook denoiser ─────────────────────────────────────────────
-            # Denoiser requires 16 kHz mono
-            noisy_dir = os.path.join(tmpdir, "noisy")
-            os.makedirs(noisy_dir, exist_ok=True)
-            mono_wav = os.path.join(noisy_dir, "mono.wav")
-            subprocess.run(
-                ["ffmpeg", "-i", wav_path, "-ar", "16000", "-ac", "1", "-y", mono_wav],
-                check=True, capture_output=True, timeout=60,
-            )
+            # ── Denoising — model selected by tier ───────────────────────────
+            # rnnoise (free): 48kHz mono, very fast
+            # dns64 (basic):  48kHz, Facebook denoiser dns64 via denoiser pkg
+            # deepfilternet (pro): 48kHz, DeepFilterNet3
             enhanced_dir = os.path.join(tmpdir, "enhanced")
             os.makedirs(enhanced_dir, exist_ok=True)
-            cmd = [
-                str(VENV_BIN / "python"), "-m", "denoiser.enhance",
-                "--noisy_dir", noisy_dir,
-                "--out_dir",   enhanced_dir,
-                "--device",    "cpu",
-            ]
-            if category == "wind":
-                cmd.append("--dns64")
-            result = subprocess.run(cmd, capture_output=True, timeout=JOB_TIMEOUT)
-            if result.returncode != 0:
-                stderr_text = result.stderr.decode(errors='replace')
-                print(f"[worker] denoiser stderr:\n{stderr_text}")
-                raise RuntimeError(f"Denoiser failed (exit {result.returncode}):\n{stderr_text}")
+            enhanced_src = os.path.join(enhanced_dir, "enhanced.wav")
 
-            base         = pathlib.Path(mono_wav).stem
-            enhanced_src = os.path.join(enhanced_dir, f"{base}_enhanced.wav")
+            if model == "rnnoise":
+                # RNNoise — requires 48kHz mono s16 WAV
+                mono_wav = os.path.join(tmpdir, "mono48.wav")
+                subprocess.run(
+                    ["ffmpeg", "-i", wav_path, "-ar", "48000", "-ac", "1", "-y", mono_wav],
+                    check=True, capture_output=True, timeout=60,
+                )
+                from pyrnnoise import RNNoise
+                rnn = RNNoise(sample_rate=48000)
+                list(rnn.denoise_wav(mono_wav, enhanced_src))  # consume generator
+                print(f"[worker] RNNoise done", flush=True)
+
+            elif model == "deepfilternet":
+                # DeepFilterNet3 — requires 48kHz, handles stereo
+                wav48_path = os.path.join(tmpdir, "input48.wav")
+                subprocess.run(
+                    ["ffmpeg", "-i", wav_path, "-ar", "48000", "-y", wav48_path],
+                    check=True, capture_output=True, timeout=60,
+                )
+                from df.enhance import enhance, init_df, load_audio, save_audio
+                df_model, df_state, _ = init_df()
+                audio, _ = load_audio(wav48_path, sr=df_state.sr())
+                enhanced_audio = enhance(df_model, df_state, audio)
+                save_audio(enhanced_src, enhanced_audio, df_state.sr())
+                print(f"[worker] DeepFilterNet3 done", flush=True)
+
+            elif model == "dns64":
+                # Facebook DNS64 — requires 16kHz mono via denoiser package
+                noisy_dir = os.path.join(tmpdir, "noisy")
+                os.makedirs(noisy_dir, exist_ok=True)
+                mono_wav = os.path.join(noisy_dir, "mono.wav")
+                subprocess.run(
+                    ["ffmpeg", "-i", wav_path, "-ar", "16000", "-ac", "1", "-y", mono_wav],
+                    check=True, capture_output=True, timeout=60,
+                )
+                result = subprocess.run(
+                    [str(VENV_BIN / "python"), "-m", "denoiser.enhance",
+                     "--noisy_dir", noisy_dir, "--out_dir", enhanced_dir,
+                     "--device", "cpu", "--dns64"],
+                    capture_output=True, timeout=JOB_TIMEOUT,
+                )
+                if result.returncode != 0:
+                    stderr_text = result.stderr.decode(errors='replace')
+                    print(f"[worker] dns64 stderr:\n{stderr_text}", flush=True)
+                    raise RuntimeError(f"DNS64 denoiser failed (exit {result.returncode}):\n{stderr_text}")
+                base = pathlib.Path(mono_wav).stem
+                enhanced_src = os.path.join(enhanced_dir, f"{base}_enhanced.wav")
+                print(f"[worker] DNS64 done", flush=True)
+
+            else:
+                raise ValueError(f"Unknown denoiser model: {model!r}")
+
             if free_plan:
                 mp3_path = os.path.join(enhanced_dir, "enhanced.mp3")
                 subprocess.run(
