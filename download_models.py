@@ -28,25 +28,26 @@ try:
 except Exception as e:
     print(f'WARN: RNNoise init failed: {e}', flush=True)
 
-# ── SepFormer (Free voice isolation) ──────────────────────────────────────────
+# ── SpeechBrain SepFormer models (voice isolation) ────────────────────────────
 try:
-    from speechbrain.inference.separation import SepformerSeparation
     import os
-    SepformerSeparation.from_hparams(
-        source="speechbrain/sepformer-wham",
-        savedir=os.path.join(os.path.expanduser("~"), ".cache", "speechbrain", "sepformer-wham"),
-        run_opts={"device": "cpu"},
-    )
-    print('Downloaded SepFormer model', flush=True)
+    from speechbrain.inference.separation import SepformerSeparation
+    cache = os.path.expanduser("~/.cache/speechbrain")
+    for name, source in [
+        ("sepformer",     "speechbrain/sepformer-wham"),
+        ("sepformer_wsj", "speechbrain/sepformer-wsj02mix"),
+        ("sepformer_pro", "speechbrain/sepformer-whamr"),
+    ]:
+        try:
+            SepformerSeparation.from_hparams(
+                source=source,
+                savedir=os.path.join(cache, name),
+                run_opts={"device": "cpu"},
+            )
+            print(f'Downloaded {name} model', flush=True)
+        except Exception as e:
+            print(f'WARN: could not pre-download {name}: {e}', flush=True)
 except Exception as e:
-    print(f'WARN: could not pre-download SepFormer: {e}', flush=True)
-
-# ── Asteroid ConvTasNet (Pro voice isolation) ─────────────────────────────────
-try:
-    from asteroid.models import ConvTasNet
-    ConvTasNet.from_pretrained("JorisCos/ConvTasNet_Libri2Mix_sepclean_16k")
-    print('Downloaded Asteroid ConvTasNet model', flush=True)
-except Exception as e:
-    print(f'WARN: could not pre-download Asteroid model: {e}', flush=True)
+    print(f'WARN: speechbrain import failed: {e}', flush=True)
 
 sys.exit(0)

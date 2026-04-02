@@ -315,52 +315,30 @@ def process_job(job):
                 check=True, capture_output=True, timeout=60,
             )
 
-            if model == "sepformer":
-                import torchaudio
-                from speechbrain.inference.separation import SepformerSeparation
-                separator = SepformerSeparation.from_hparams(
-                    source="speechbrain/sepformer-wham",
-                    savedir=os.path.join(os.path.expanduser("~"), ".cache", "speechbrain", "sepformer-wham"),
-                    run_opts={"device": "cpu"},
-                )
-                est_sources = separator.separate_file(path=wav16_path)
-                vocals_path  = os.path.join(tmpdir, "vocals.wav")
-                backing_path = os.path.join(tmpdir, "background.wav")
-                torchaudio.save(vocals_path,  est_sources[:, :, 0].detach().cpu(), 16000)
-                torchaudio.save(backing_path, est_sources[:, :, 1].detach().cpu(), 16000)
-                stem_files = {"vocals": vocals_path, "background": backing_path}
-                print("[worker] SepFormer done", flush=True)
-
-            elif model == "clearvoice":
-                import torchaudio
-                from clearvoice import ClearVoice
-                cv = ClearVoice(task='speech_separation', model_names=['MossFormer2_SS_16K'])
-                output_wav = cv(input_path=wav16_path, online_write=False)
-                vocals_path  = os.path.join(tmpdir, "vocals.wav")
-                backing_path = os.path.join(tmpdir, "background.wav")
-                torchaudio.save(vocals_path,  output_wav[0].unsqueeze(0).cpu(), 16000)
-                torchaudio.save(backing_path, output_wav[1].unsqueeze(0).cpu(), 16000)
-                stem_files = {"vocals": vocals_path, "background": backing_path}
-                print("[worker] MossFormer2 done", flush=True)
-
-            elif model == "asteroid":
-                import torch, torchaudio
-                from asteroid.models import ConvTasNet
-                ast_model = ConvTasNet.from_pretrained("JorisCos/ConvTasNet_Libri2Mix_sepclean_16k")
-                wav_t, sr = torchaudio.load(wav16_path)
-                if sr != 16000:
-                    wav_t = torchaudio.functional.resample(wav_t, sr, 16000)
-                with torch.no_grad():
-                    est = ast_model.separate(wav_t)
-                vocals_path  = os.path.join(tmpdir, "vocals.wav")
-                backing_path = os.path.join(tmpdir, "background.wav")
-                torchaudio.save(vocals_path,  est[0].unsqueeze(0).cpu(), 16000)
-                torchaudio.save(backing_path, est[1].unsqueeze(0).cpu(), 16000)
-                stem_files = {"vocals": vocals_path, "background": backing_path}
-                print("[worker] Asteroid done", flush=True)
-
-            else:
+            SEPFORMER_SOURCES = {
+                "sepformer":     "speechbrain/sepformer-wham",
+                "sepformer_wsj": "speechbrain/sepformer-wsj02mix",
+                "sepformer_pro": "speechbrain/sepformer-whamr",
+            }
+            if model not in SEPFORMER_SOURCES:
                 raise ValueError(f"Unknown speech model: {model!r}")
+
+            import torchaudio
+            from speechbrain.inference.separation import SepformerSeparation
+            hf_source = SEPFORMER_SOURCES[model]
+            savedir = os.path.join(os.path.expanduser("~"), ".cache", "speechbrain", model)
+            separator = SepformerSeparation.from_hparams(
+                source=hf_source,
+                savedir=savedir,
+                run_opts={"device": "cpu"},
+            )
+            est_sources = separator.separate_file(path=wav16_path)
+            vocals_path  = os.path.join(tmpdir, "vocals.wav")
+            backing_path = os.path.join(tmpdir, "background.wav")
+            torchaudio.save(vocals_path,  est_sources[:, :, 0].detach().cpu(), 16000)
+            torchaudio.save(backing_path, est_sources[:, :, 1].detach().cpu(), 16000)
+            stem_files = {"vocals": vocals_path, "background": backing_path}
+            print(f"[worker] {model} done", flush=True)
 
             for stem_name, src in stem_files.items():
                 ext = "mp3" if free_plan else "wav"
