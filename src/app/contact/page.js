@@ -45,7 +45,7 @@ export default function ContactPage() {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                             {[
-                                { icon: Mail, label: 'Email us', val: 'hello@audsep.io' },
+                                { icon: Mail, label: 'Email us', val: 'rsharsunpranav@gmail.com' },
                                 { icon: Twitter, label: 'Twitter / X', val: '@audsep' },
                                 { icon: Github, label: 'GitHub', val: 'github.com/audsep' },
                                 { icon: MessageSquare, label: 'Response time', val: '< 24 hours' },
