@@ -307,36 +307,108 @@ def process_job(job):
                     sb_upload("outputs", storage_path, f.read())
             output_paths["enhanced"] = storage_path
 
+        elif category in ("speech", "speaker"):
+            # ── Voice isolation ───────────────────────────────────────────────
+            wav16_path = os.path.join(tmpdir, "input16.wav")
+            subprocess.run(
+                ["ffmpeg", "-i", wav_path, "-ar", "16000", "-ac", "1", "-y", wav16_path],
+                check=True, capture_output=True, timeout=60,
+            )
+
+            if model == "sepformer":
+                import torchaudio
+                from speechbrain.inference.separation import SepformerSeparation
+                separator = SepformerSeparation.from_hparams(
+                    source="speechbrain/sepformer-wham",
+                    savedir=os.path.join(os.path.expanduser("~"), ".cache", "speechbrain", "sepformer-wham"),
+                    run_opts={"device": "cpu"},
+                )
+                est_sources = separator.separate_file(path=wav16_path)
+                vocals_path  = os.path.join(tmpdir, "vocals.wav")
+                backing_path = os.path.join(tmpdir, "background.wav")
+                torchaudio.save(vocals_path,  est_sources[:, :, 0].detach().cpu(), 16000)
+                torchaudio.save(backing_path, est_sources[:, :, 1].detach().cpu(), 16000)
+                stem_files = {"vocals": vocals_path, "background": backing_path}
+                print("[worker] SepFormer done", flush=True)
+
+            elif model == "clearvoice":
+                import torchaudio
+                from clearvoice import ClearVoice
+                cv = ClearVoice(task='speech_separation', model_names=['MossFormer2_SS_16K'])
+                output_wav = cv(input_path=wav16_path, online_write=False)
+                vocals_path  = os.path.join(tmpdir, "vocals.wav")
+                backing_path = os.path.join(tmpdir, "background.wav")
+                torchaudio.save(vocals_path,  output_wav[0].unsqueeze(0).cpu(), 16000)
+                torchaudio.save(backing_path, output_wav[1].unsqueeze(0).cpu(), 16000)
+                stem_files = {"vocals": vocals_path, "background": backing_path}
+                print("[worker] MossFormer2 done", flush=True)
+
+            elif model == "asteroid":
+                import torch, torchaudio
+                from asteroid.models import ConvTasNet
+                ast_model = ConvTasNet.from_pretrained("JorisCos/ConvTasNet_Libri2Mix_sepclean_16k")
+                wav_t, sr = torchaudio.load(wav16_path)
+                if sr != 16000:
+                    wav_t = torchaudio.functional.resample(wav_t, sr, 16000)
+                with torch.no_grad():
+                    est = ast_model.separate(wav_t)
+                vocals_path  = os.path.join(tmpdir, "vocals.wav")
+                backing_path = os.path.join(tmpdir, "background.wav")
+                torchaudio.save(vocals_path,  est[0].unsqueeze(0).cpu(), 16000)
+                torchaudio.save(backing_path, est[1].unsqueeze(0).cpu(), 16000)
+                stem_files = {"vocals": vocals_path, "background": backing_path}
+                print("[worker] Asteroid done", flush=True)
+
+            else:
+                raise ValueError(f"Unknown speech model: {model!r}")
+
+            for stem_name, src in stem_files.items():
+                ext = "mp3" if free_plan else "wav"
+                if free_plan:
+                    mp3_path = os.path.join(tmpdir, f"{stem_name}.mp3")
+                    subprocess.run(
+                        ["ffmpeg", "-i", src, "-b:a", "192k", "-y", mp3_path],
+                        check=True, capture_output=True, timeout=120,
+                    )
+                    src = mp3_path
+                storage_path = f"{user_id}/{job_id}/{stem_name}.{ext}"
+                with open(src, "rb") as f:
+                    sb_upload("outputs", storage_path, f.read(),
+                              "audio/mpeg" if free_plan else "audio/wav")
+                output_paths[stem_name] = storage_path
+
         else:
-            # ── Demucs ────────────────────────────────────────────────────────
+            # ── Demucs stem separation ────────────────────────────────────────
             out_dir = os.path.join(tmpdir, "out")
+            demucs_model = "htdemucs"  # underlying model for all music tiers
             cmd = [
                 str(VENV_BIN / "demucs"),
-                "-n", model,
+                "-n", demucs_model,
                 "-o", out_dir,
-                # Process all stems in parallel threads — biggest speedup on CPU
                 "--jobs", DEMUCS_JOBS,
-                # Reduce overlap between segments (0.1 vs default 0.25)
-                # Faster with negligible quality difference for most music
                 "--overlap", "0.1",
             ]
-            if vocal_only or category in ("speech", "speaker"):
+            # Free tier (demucs_2stem) and vocal_only → 2-stem mode
+            if model == "demucs_2stem" or vocal_only:
                 cmd += ["--two-stems", "vocals"]
+            # Pro tier (htdemucs_ft) → use fine-tuned model
+            if model == "htdemucs_ft":
+                cmd[cmd.index(demucs_model)] = "htdemucs_ft"
             cmd.append(wav_path)
 
             result = run_cancellable(cmd, job_id)
             if result == "cancelled":
-                print(f"[worker] Job {job_id} cancelled mid-processing.")
-                return  # tmpdir cleaned up in finally
+                print(f"[worker] Job {job_id} cancelled mid-processing.", flush=True)
+                return
 
+            used_model = "htdemucs_ft" if model == "htdemucs_ft" else "htdemucs"
             base      = pathlib.Path(wav_path).stem  # "input"
-            model_out = os.path.join(out_dir, model, base)
+            model_out = os.path.join(out_dir, used_model, base)
             for f_name in os.listdir(model_out):
                 stem = pathlib.Path(f_name).stem
                 src  = os.path.join(model_out, f_name)
 
                 if free_plan:
-                    # Free tier: convert output to MP3 (192kbps) before uploading
                     mp3_name = f"{stem}.mp3"
                     mp3_path = os.path.join(model_out, mp3_name)
                     subprocess.run(

@@ -6,15 +6,18 @@ import { createServerClient } from '../../../../lib/supabase';
 const ALLOWED_CATEGORIES = ['music', 'speech', 'noise', 'wind'];
 
 // Each model maps to the minimum tier required to use it.
-// 3-tier model gating matching the pricing page:
-//   free:  htdemucs, rnnoise
-//   basic: htdemucs_ft, htdemucs_6s, dns64
-//   pro:   htdemucs_hybrid, deepfilternet
+// Music:   free=demucs_2stem, basic=htdemucs, pro=htdemucs_ft
+// Speech:  free=sepformer,    basic=clearvoice, pro=asteroid
+// Noise:   free=rnnoise,      basic=dns64,      pro=deepfilternet
 const MODEL_TIERS = {
-    'htdemucs':       'free',
-    'htdemucs_ft':    'basic',
+    'demucs_2stem':   'free',
+    'htdemucs':       'basic',
+    'htdemucs_ft':    'pro',
     'htdemucs_6s':    'basic',
     'htdemucs_hybrid':'pro',
+    'sepformer':      'free',
+    'clearvoice':     'basic',
+    'asteroid':       'pro',
     'rnnoise':        'free',
     'dns64':          'basic',
     'deepfilternet':  'pro',
