@@ -24,7 +24,7 @@ const PENDING_JOB_KEY = 'audsep_pending_job';
 export default function AppPage() {
     const { user } = useUser();
     const [file, setFile] = useState(null);
-    const [modelConfig, setModelConfig] = useState({ model: 'htdemucs', category: 'music' });
+    const [modelConfig, setModelConfig] = useState({ model: 'demucs_2stem', category: 'music' });
     const [vocalOnly, setVocalOnly] = useState(false);
     const [trimStart, setTrimStart] = useState(0);
     const [trimEnd, setTrimEnd] = useState(0);
